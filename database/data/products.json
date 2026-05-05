@@ -1,0 +1,24 @@
+[
+  {
+    "id": "1",
+    "nameAr": "نظام إدارة التوزيع",
+    "nameEn": "Distribution Management System",
+    "price": 500,
+    "category": "Systems",
+    "descriptionAr": "نظام متكامل لإدارة عمليات التوزيع",
+    "descriptionEn": "Complete system for managing distribution operations",
+    "imageUrl": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=500",
+    "videoUrl": ""
+  },
+  {
+    "id": "2",
+    "nameAr": "تطبيق المناديب",
+    "nameEn": "Sales Representatives App",
+    "price": 250,
+    "category": "Mobile Apps",
+    "descriptionAr": "تطبيق موبايل لمتابعة المناديب والمبيعات",
+    "descriptionEn": "Mobile app for tracking reps and sales",
+    "imageUrl": "https://images.unsplash.com/photo-1512428559083-a4979b2b51ff?q=80&w=500",
+    "videoUrl": ""
+  }
+]
