@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { useLanguage } from "@/src/contexts/language-context"
 import { cn } from "@/src/lib/utils"
-import { ChevronLeft, ChevronRight, Monitor, Pill, ShoppingCart, Landmark, Stethoscope, Factory, GraduationCap, LayoutGrid, TrendingUp, Smartphone, Settings } from "lucide-react"
+import { ChevronLeft, ChevronRight, ChevronDown, Monitor, Pill, ShoppingCart, Landmark, Stethoscope, Factory, GraduationCap, LayoutGrid, TrendingUp, Smartphone, Settings, Search, SlidersHorizontal, X } from "lucide-react"
 import { ProductModal, type Product } from "./product-modal"
 
 const translations = {
@@ -13,6 +13,7 @@ const translations = {
     titleHighlight: "Systems",
     subtitle: "Organize your business no matter what type of work you do",
     cta: "Build Your System",
+    viewAll: "View All",
     filters: [
       { id: "all", label: "All Systems", icon: LayoutGrid },
       { id: "sales", label: "Sales Systems", icon: TrendingUp },
@@ -21,6 +22,17 @@ const translations = {
     ],
     priceLabel: "Price",
     currency: "IQD",
+    catalog: {
+      title: "All Products",
+      subtitle: "Search and filter all available systems",
+      searchPlaceholder: "Search by name or description...",
+      allCategories: "All categories",
+      mediaOnly: "Has media only",
+      sortNewest: "Newest first",
+      sortPriceLow: "Price: Low to high",
+      sortPriceHigh: "Price: High to low",
+      noResults: "No products match your filters",
+    },
     systems: [
       {
         id: 1,
@@ -84,6 +96,7 @@ const translations = {
     titleHighlight: "العسكريان",
     subtitle: "تنظم أعمالك مهما يكون نوع عملك",
     cta: "اصنع نظامك",
+    viewAll: "عرض الكل",
     filters: [
       { id: "all", label: "كل الأنظمة", icon: LayoutGrid },
       { id: "sales", label: "أنظمة مبيعات", icon: TrendingUp },
@@ -92,6 +105,17 @@ const translations = {
     ],
     priceLabel: "السعر",
     currency: "د.ع",
+    catalog: {
+      title: "كل المنتجات",
+      subtitle: "ابحث وفلتر جميع الأنظمة المتاحة",
+      searchPlaceholder: "ابحث بالاسم أو الوصف...",
+      allCategories: "كل التصنيفات",
+      mediaOnly: "المنتجات التي تحتوي وسائط فقط",
+      sortNewest: "الأحدث أولاً",
+      sortPriceLow: "السعر: من الأقل للأعلى",
+      sortPriceHigh: "السعر: من الأعلى للأقل",
+      noResults: "لا توجد منتجات مطابقة للفلاتر",
+    },
     systems: [
       {
         id: 1,
@@ -175,6 +199,11 @@ export function SystemsSection() {
   const t = isRTL ? translations.ar : translations.en
   const [activeFilter, setActiveFilter] = useState("all")
   const [selectedSystem, setSelectedSystem] = useState<Product | null>(null)
+  const [isCatalogOpen, setIsCatalogOpen] = useState(false)
+  const [catalogSearch, setCatalogSearch] = useState("")
+  const [catalogCategory, setCatalogCategory] = useState("all")
+  const [catalogMediaOnly, setCatalogMediaOnly] = useState(false)
+  const [catalogSort, setCatalogSort] = useState("newest")
   const [dbProducts, setDbProducts] = useState<any[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -200,9 +229,30 @@ export function SystemsSection() {
 
   const allProducts = [...t.systems, ...dbProducts]
 
+  const parsePrice = (value: string | number) => Number(String(value).replace(/[^\d.]/g, "")) || 0
+
   const filteredSystems = activeFilter === "all" 
     ? allProducts 
     : allProducts.filter(system => system.category === activeFilter)
+
+  const catalogProducts = useMemo(() => {
+    const q = catalogSearch.trim().toLowerCase()
+    const byQuery = allProducts.filter((p) =>
+      q ? `${p.title} ${p.description}`.toLowerCase().includes(q) : true,
+    )
+    const byCategory = byQuery.filter((p) =>
+      catalogCategory === "all" ? true : p.category === catalogCategory,
+    )
+    const byMedia = byCategory.filter((p) =>
+      catalogMediaOnly ? Boolean(p.imageUrl || p.videoUrl) : true,
+    )
+
+    return [...byMedia].sort((a, b) => {
+      if (catalogSort === "priceLow") return parsePrice(a.price) - parsePrice(b.price)
+      if (catalogSort === "priceHigh") return parsePrice(b.price) - parsePrice(a.price)
+      return String(b.id).localeCompare(String(a.id))
+    })
+  }, [allProducts, catalogCategory, catalogMediaOnly, catalogSearch, catalogSort])
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
@@ -253,7 +303,7 @@ export function SystemsSection() {
           {/* Main Content */}
           <div className="flex-1 min-w-0">
             {/* Filter Tabs */}
-            <div className="flex flex-wrap justify-center lg:justify-start gap-2 sm:gap-3 mb-6 sm:mb-8">
+            <div className="mb-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3 lg:justify-start sm:mb-8">
               {t.filters.map((filter) => (
                 <button
                   key={filter.id}
@@ -270,6 +320,16 @@ export function SystemsSection() {
                   {filter.label}
                 </button>
               ))}
+              <button
+                onClick={() => setIsCatalogOpen(true)}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-700 transition-all hover:bg-cyan-500/20 dark:text-cyan-300 sm:px-4 sm:text-sm",
+                  isRTL && "font-cairo",
+                )}
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                {t.viewAll}
+              </button>
             </div>
 
             {/* Carousel Container */}
@@ -399,6 +459,141 @@ export function SystemsSection() {
           onClose={() => setSelectedSystem(null)}
           product={selectedSystem}
         />
+      )}
+
+      {/* View All Products Catalog */}
+      {isCatalogOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-6">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsCatalogOpen(false)} />
+          <div className="relative w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl border bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex items-center justify-between border-b px-4 py-3 dark:border-slate-700 sm:px-6 sm:py-4">
+              <div>
+                <h3 className={cn("text-lg font-bold dark:text-white sm:text-xl", isRTL && "font-cairo")}>{t.catalog.title}</h3>
+                <p className={cn("text-xs text-muted-foreground sm:text-sm", isRTL && "font-cairo")}>{t.catalog.subtitle}</p>
+              </div>
+              <button
+                onClick={() => setIsCatalogOpen(false)}
+                className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                aria-label="Close catalog"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="max-h-[calc(92vh-72px)] overflow-y-auto p-4 sm:p-6">
+              <div className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-4">
+                <div className="relative lg:col-span-2">
+                  <Search className={cn("absolute top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400", isRTL ? "right-3" : "left-3")} />
+                  <input
+                    type="text"
+                    value={catalogSearch}
+                    onChange={(e) => setCatalogSearch(e.target.value)}
+                    placeholder={t.catalog.searchPlaceholder}
+                    className={cn(
+                      "w-full rounded-xl border bg-slate-50 py-2.5 text-sm outline-none focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white",
+                      isRTL ? "pr-10 pl-3 text-right font-cairo" : "pl-10 pr-3",
+                    )}
+                  />
+                </div>
+                <div className="relative">
+                  <select
+                    value={catalogCategory}
+                    onChange={(e) => setCatalogCategory(e.target.value)}
+                    className={cn(
+                      "w-full appearance-none rounded-xl border bg-slate-50 py-2.5 text-sm outline-none focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white",
+                      isRTL ? "pe-10 ps-3 text-right font-cairo" : "pe-10 ps-3",
+                    )}
+                  >
+                    <option value="all">{t.catalog.allCategories}</option>
+                    {t.filters.filter((f) => f.id !== "all").map((f) => (
+                      <option key={f.id} value={f.id}>{f.label}</option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    className={cn(
+                      "pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500",
+                      isRTL ? "right-3" : "right-3",
+                    )}
+                  />
+                </div>
+                <div className="relative">
+                  <select
+                    value={catalogSort}
+                    onChange={(e) => setCatalogSort(e.target.value)}
+                    className={cn(
+                      "w-full appearance-none rounded-xl border bg-slate-50 py-2.5 text-sm outline-none focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white",
+                      isRTL ? "pe-10 ps-3 text-right font-cairo" : "pe-10 ps-3",
+                    )}
+                  >
+                    <option value="newest">{t.catalog.sortNewest}</option>
+                    <option value="priceLow">{t.catalog.sortPriceLow}</option>
+                    <option value="priceHigh">{t.catalog.sortPriceHigh}</option>
+                  </select>
+                  <ChevronDown
+                    className={cn(
+                      "pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500",
+                      isRTL ? "right-3" : "right-3",
+                    )}
+                  />
+                </div>
+              </div>
+
+              <label className={cn("mb-5 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300", isRTL && "font-cairo")}>
+                <input
+                  type="checkbox"
+                  checked={catalogMediaOnly}
+                  onChange={(e) => setCatalogMediaOnly(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                />
+                {t.catalog.mediaOnly}
+              </label>
+
+              {catalogProducts.length === 0 ? (
+                <div className={cn("rounded-2xl border border-dashed p-10 text-center text-muted-foreground", isRTL && "font-cairo")}>
+                  {t.catalog.noResults}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {catalogProducts.map((system) => {
+                    const IconComponent = systemIcons[Number(system.id)] || Monitor
+                    return (
+                      <button
+                        key={`catalog-${system.id}`}
+                        onClick={() => {
+                          setSelectedSystem({
+                            ...system,
+                            icon: IconComponent,
+                            categoryLabel: resolveCategoryLabel(system.category, t.filters),
+                          })
+                          setIsCatalogOpen(false)
+                        }}
+                        className="overflow-hidden rounded-2xl border bg-white text-start shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900"
+                      >
+                        <div className="aspect-[16/10] bg-slate-100 dark:bg-slate-800">
+                          {system.imageUrl ? (
+                            <img src={system.imageUrl} alt={system.title} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full items-center justify-center">
+                              <Monitor className="h-10 w-10 text-slate-400" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-4">
+                          <p className={cn("mb-1 text-xs text-cyan-600", isRTL && "font-cairo")}>{resolveCategoryLabel(system.category, t.filters)}</p>
+                          <h4 className={cn("line-clamp-1 font-bold dark:text-white", isRTL && "font-cairo")}>{system.title}</h4>
+                          <p className={cn("mt-1 line-clamp-2 text-xs text-muted-foreground", isRTL && "font-cairo")}>{system.description}</p>
+                          <p className={cn("mt-3 text-sm font-bold text-cyan-600 dark:text-cyan-400", isRTL && "font-cairo")}>
+                            {system.price} {t.currency}
+                          </p>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </section>
   )

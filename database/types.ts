@@ -30,6 +30,20 @@ export interface SiteConfig {
   hero: HeroBlock;
   stats: StatItem[];
   appearance: AppearanceBlock;
+  contact: {
+    email: string;
+    phone: string;
+    whatsapp: string;
+    addressAr: string;
+    addressEn: string;
+    websiteUrl: string;
+    socials: {
+      facebook: string;
+      twitter: string;
+      instagram: string;
+      linkedin: string;
+    };
+  };
 }
 
 export interface Product {

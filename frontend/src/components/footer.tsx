@@ -2,6 +2,7 @@
 
 import { Link } from "react-router-dom"
 import { useLanguage } from "@/src/contexts/language-context"
+import { useSiteConfig } from "@/src/contexts/site-config-context"
 import { cn } from "@/src/lib/utils"
 import { Phone, Mail, MapPin, Facebook, Instagram, Linkedin, Twitter } from "lucide-react"
 
@@ -46,12 +47,7 @@ const translations = {
         ],
       },
     },
-    contact: {
-      title: "Contact Us",
-      phone: "5252",
-      email: "info@alaskaryan.com",
-      address: "Samarra, Iraq",
-    },
+    contact: { title: "Contact Us" },
     copyright: "All rights reserved.",
     madeWith: "Made with excellence in Iraq",
   },
@@ -95,12 +91,7 @@ const translations = {
         ],
       },
     },
-    contact: {
-      title: "تواصل معنا",
-      phone: "5252",
-      email: "info@alaskaryan.com",
-      address: "العراق، سامراء",
-    },
+    contact: { title: "تواصل معنا" },
     copyright: "جميع الحقوق محفوظة.",
     madeWith: "صُنع بإتقان في العراق",
   },
@@ -108,7 +99,17 @@ const translations = {
 
 export function Footer() {
   const { isRTL } = useLanguage()
+  const { config } = useSiteConfig()
   const t = isRTL ? translations.ar : translations.en
+  const phoneText = config.contact.phone
+  const whatsappLink = `https://wa.me/${(config.contact.whatsapp || config.contact.phone).replace(/[^\d]/g, "")}`
+  const addressText = isRTL ? config.contact.addressAr : config.contact.addressEn
+  const socials = [
+    { Icon: Facebook, url: config.contact.socials.facebook, label: "Facebook" },
+    { Icon: Twitter, url: config.contact.socials.twitter, label: "Twitter" },
+    { Icon: Instagram, url: config.contact.socials.instagram, label: "Instagram" },
+    { Icon: Linkedin, url: config.contact.socials.linkedin, label: "LinkedIn" },
+  ]
 
   return (
     <footer className="bg-slate-950 text-white">
@@ -134,10 +135,12 @@ export function Footer() {
           </p>
           {/* Social Links */}
           <div className="flex gap-2 sm:gap-3">
-            {[Facebook, Twitter, Instagram, Linkedin].map((Icon, i) => (
+            {socials.map(({ Icon, url, label }) => (
               <a
-                key={i}
-                href="#"
+                key={label}
+                href={url || "#"}
+                target="_blank"
+                rel="noreferrer"
                 className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-slate-800 hover:bg-cyan-600 flex items-center justify-center transition-colors duration-300"
               >
                 <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -167,10 +170,12 @@ export function Footer() {
             </p>
             {/* Social Links */}
             <div className="flex gap-3">
-              {[Facebook, Twitter, Instagram, Linkedin].map((Icon, i) => (
+              {socials.map(({ Icon, url, label }) => (
                 <a
-                  key={i}
-                  href="#"
+                  key={label}
+                  href={url || "#"}
+                  target="_blank"
+                  rel="noreferrer"
                   className="w-10 h-10 rounded-lg bg-slate-800 hover:bg-cyan-600 flex items-center justify-center transition-colors duration-300"
                 >
                   <Icon className="w-5 h-5" />
@@ -265,30 +270,35 @@ export function Footer() {
             <ul className="space-y-3 sm:space-y-4">
               <li>
                 <a
-                  href={`tel:${t.contact.phone}`}
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noreferrer"
                   className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base text-slate-400 hover:text-cyan-400 transition-colors"
                 >
                   <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-500 shrink-0" />
-                  <span dir="ltr">{t.contact.phone}</span>
+                  <span dir="ltr">{phoneText}</span>
                 </a>
               </li>
               <li>
                 <a
-                  href={`mailto:${t.contact.email}`}
+                  href={`mailto:${config.contact.email}`}
                   className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base text-slate-400 hover:text-cyan-400 transition-colors"
                 >
                   <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-500 shrink-0" />
-                  <span className="break-all">{t.contact.email}</span>
+                  <span className="break-all">{config.contact.email}</span>
                 </a>
               </li>
               <li>
-                <div className={cn(
+                <a
+                  href={config.contact.websiteUrl || "/location"}
+                  className={cn(
                   "flex items-center gap-2 sm:gap-3 text-sm sm:text-base text-slate-400",
+                  "hover:text-cyan-400 transition-colors",
                   isRTL && "font-cairo"
                 )}>
                   <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-500 shrink-0" />
-                  <span>{t.contact.address}</span>
-                </div>
+                  <span>{addressText}</span>
+                </a>
               </li>
             </ul>
           </div>

@@ -21,5 +21,19 @@
     "showAnnouncement": true,
     "announcementAr": "بدأ عرض الصيف! خصم 20% على جميع الأنظمة",
     "announcementEn": "SUMMER OFFER STARTED! 20% OFF ON ALL SYSTEMS"
+  },
+  "contact": {
+    "email": "info@alaskarian.com",
+    "phone": "5252",
+    "whatsapp": "9647700000000",
+    "addressAr": "العتبة العسكرية المقدسة، سامراء، العراق",
+    "addressEn": "Al-Askari Shrine, Samarra, Iraq",
+    "websiteUrl": "/location",
+    "socials": {
+      "facebook": "https://facebook.com",
+      "twitter": "https://x.com",
+      "instagram": "https://instagram.com",
+      "linkedin": "https://linkedin.com"
+    }
   }
 }

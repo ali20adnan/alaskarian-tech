@@ -27,12 +27,16 @@ export interface SiteConfig {
   contact: {
     email: string;
     phone: string;
+    whatsapp: string;
     addressAr: string;
     addressEn: string;
+    websiteUrl: string;
     socials: {
-      platform: string;
-      url: string;
-    }[];
+      facebook: string;
+      twitter: string;
+      instagram: string;
+      linkedin: string;
+    };
   };
 }
 
@@ -63,12 +67,16 @@ const defaultConfig: SiteConfig = {
   contact: {
     email: "info@alaskarian.com",
     phone: "5252",
+    whatsapp: "9647700000000",
     addressAr: "العراق، سامراء",
     addressEn: "Samarra, Iraq",
-    socials: [
-      { platform: "Facebook", url: "https://facebook.com" },
-      { platform: "LinkedIn", url: "https://linkedin.com" },
-    ],
+    websiteUrl: "/location",
+    socials: {
+      facebook: "https://facebook.com",
+      twitter: "https://x.com",
+      instagram: "https://instagram.com",
+      linkedin: "https://linkedin.com",
+    },
   },
 };
 
@@ -89,7 +97,21 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
       .then(res => res.json())
       .then(data => {
         if (data && data.hero) {
-          setConfig(data);
+          setConfig({
+            ...defaultConfig,
+            ...data,
+            hero: { ...defaultConfig.hero, ...data.hero },
+            appearance: { ...defaultConfig.appearance, ...data.appearance },
+            contact: {
+              ...defaultConfig.contact,
+              ...data.contact,
+              socials: {
+                ...defaultConfig.contact.socials,
+                ...(data.contact?.socials || {}),
+              },
+            },
+            stats: Array.isArray(data.stats) ? data.stats : defaultConfig.stats,
+          });
         }
         setIsLoading(false);
       })

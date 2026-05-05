@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useState, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { X, ChevronLeft, ChevronRight, Monitor, Check, Play } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
 import { cn } from "@/src/lib/utils"
@@ -71,6 +72,11 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
   const { isRTL } = useLanguage()
   const t = isRTL ? translations.ar : translations.en
   const [currentImage, setCurrentImage] = useState(0)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Close on escape key
   useEffect(() => {
@@ -87,9 +93,9 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
     }
   }, [isOpen, onClose])
 
-  if (!isOpen || !product) return null
+  if (!mounted) return null
 
-  const IconComponent = product.icon || Monitor
+  const IconComponent = product?.icon || Monitor
   
   // Mock screenshots (in real app, these would come from product data)
   const screenshots = [1, 2, 3, 4]
@@ -97,16 +103,30 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
   const nextImage = () => setCurrentImage((prev) => (prev + 1) % screenshots.length)
   const prevImage = () => setCurrentImage((prev) => (prev - 1 + screenshots.length) % screenshots.length)
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  return createPortal(
+    <AnimatePresence>
+      {isOpen && product && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[120] flex items-center justify-center p-4"
+        >
       {/* Backdrop */}
-      <div 
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
       
       {/* Modal */}
-      <div 
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 20, scale: 0.98 }}
+        transition={{ duration: 0.2 }}
         className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden"
         dir={isRTL ? "rtl" : "ltr"}
       >
@@ -332,7 +352,10 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body,
   )
 }

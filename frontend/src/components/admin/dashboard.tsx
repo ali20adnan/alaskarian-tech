@@ -24,7 +24,6 @@ import {
   Box,
   Monitor,
   ExternalLink,
-  ChevronDown,
   Paperclip,
   Smile,
   Bookmark,
@@ -34,13 +33,18 @@ import {
 import { cn } from "@/src/lib/utils"
 import { Button } from "@/src/components/ui/button"
 import { useSiteConfig } from "@/src/contexts/site-config-context"
+import { SUPPORT_STICKERS } from "@/src/lib/support-stickers"
+import { AddUserPopup } from "@/src/components/admin/POPUPS/AddUserPopup"
+import { ProductPopup } from "@/src/components/admin/POPUPS/ProductPopup"
+import { EmojiPopup } from "@/src/components/admin/POPUPS/EmojiPopup"
+import { CannedRepliesPopup } from "@/src/components/admin/POPUPS/CannedRepliesPopup"
 
 interface AdminDashboardProps {
   onLogout: () => void
   isRTL: boolean
 }
 
-type TabType = "overview" | "content" | "appearance" | "support" | "settings" | "logs" | "users" | "products"
+type TabType = "overview" | "content" | "appearance" | "support" | "settings" | "logs" | "users" | "products" | "notifications"
 
 /** iOS-style switch; `dir="ltr"` keeps thumb motion correct inside RTL admin layout */
 function AdminToggle({
@@ -76,8 +80,6 @@ function AdminToggle({
   )
 }
 
-const SUPPORT_EMOJIS = ["😀", "👍", "❤️", "🙏", "✅", "⏰", "📷", "🎉", "😊", "🔔"]
-
 type SupportMsg = {
   id: string
   role: "user" | "agent"
@@ -86,9 +88,25 @@ type SupportMsg = {
   imageUrl?: string
 }
 
+type AdminNotification = {
+  id: string
+  title: string
+  message: string
+  time: string
+  unread: boolean
+}
+
+type AdminUser = {
+  id: number
+  name: string
+  email: string
+  role: "admin" | "editor"
+  avatar: string
+}
+
 export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>("overview")
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 1024)
   const { config, updateConfig, resetConfig } = useSiteConfig()
   const [localConfig, setLocalConfig] = useState(config)
   const [isSaving, setIsSaving] = useState(false)
@@ -129,6 +147,36 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
   const [activeChatBlocked, setActiveChatBlocked] = useState(false)
   const supportAttachmentRef = useRef<HTMLInputElement>(null)
 
+  const initialNotifications = useMemo<AdminNotification[]>(
+    () =>
+      isRTL
+        ? [
+            { id: "n1", title: "طلب دعم جديد", message: "عميل جديد فتح محادثة دعم.", time: "منذ دقيقتين", unread: true },
+            { id: "n2", title: "منتج مضاف", message: "تمت إضافة منتج جديد إلى المتجر.", time: "منذ 10 دقائق", unread: true },
+            { id: "n3", title: "نسخة احتياطية مكتملة", message: "اكتملت النسخة الاحتياطية اليومية بنجاح.", time: "منذ ساعة", unread: false },
+          ]
+        : [
+            { id: "n1", title: "New support request", message: "A new customer opened a support chat.", time: "2m ago", unread: true },
+            { id: "n2", title: "Product added", message: "A new product was added to the store.", time: "10m ago", unread: true },
+            { id: "n3", title: "Backup completed", message: "Daily backup finished successfully.", time: "1h ago", unread: false },
+          ],
+    [isRTL],
+  )
+  const [notifications, setNotifications] = useState<AdminNotification[]>(initialNotifications)
+  const unreadNotificationsCount = useMemo(() => notifications.filter((n) => n.unread).length, [notifications])
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false)
+  const [newUser, setNewUser] = useState({
+    name: "",
+    email: "",
+    role: "editor" as "admin" | "editor",
+  })
+  const [users, setUsers] = useState<AdminUser[]>([
+    { id: 1, name: "Admin User", email: "admin@alaskarian.tech", role: "admin", avatar: "https://i.pravatar.cc/100?img=31" },
+    { id: 2, name: "Sarah Smith", email: "sarah@example.com", role: "editor", avatar: "https://i.pravatar.cc/100?img=32" },
+    { id: 3, name: "محمد حسن", email: "m.hassan@example.com", role: "editor", avatar: "https://i.pravatar.cc/100?img=33" },
+    { id: 4, name: "Ali Ahmed", email: "ali.ahmed@example.com", role: "editor", avatar: "https://i.pravatar.cc/100?img=34" },
+  ])
+
   const cannedReplies = useMemo(
     () =>
       isRTL
@@ -167,6 +215,19 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
       fetchProducts()
     }
   }, [activeTab])
+
+  useEffect(() => {
+    const onResize = () => {
+      setIsSidebarOpen(window.innerWidth >= 1024)
+    }
+
+    window.addEventListener("resize", onResize)
+    return () => window.removeEventListener("resize", onResize)
+  }, [])
+
+  useEffect(() => {
+    setNotifications(initialNotifications)
+  }, [initialNotifications])
 
   const fetchProducts = async () => {
     setIsProductsLoading(true)
@@ -221,6 +282,23 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
     setIsSaving(false)
   }
 
+  const handleAddUser = () => {
+    const trimmedName = newUser.name.trim()
+    const trimmedEmail = newUser.email.trim()
+    if (!trimmedName || !trimmedEmail) return
+
+    const createdUser: AdminUser = {
+      id: Date.now(),
+      name: trimmedName,
+      email: trimmedEmail,
+      role: newUser.role,
+      avatar: `https://i.pravatar.cc/100?img=${(users.length % 70) + 1}`,
+    }
+    setUsers((prev) => [createdUser, ...prev])
+    setNewUser({ name: "", email: "", role: "editor" })
+    setIsAddUserOpen(false)
+  }
+
   const stats = [
     { label: isRTL ? "مجموع المستخدمين" : "Total Users", value: "1,284", icon: Users, color: "bg-blue-500", trend: "+12%" },
     { label: isRTL ? "دردشات نشطة" : "Active Chats", value: "14", icon: MessageSquare, color: "bg-cyan-500", trend: "-5%" },
@@ -242,12 +320,12 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
       
       {/* Sidebar Overlay for Mobile */}
       <AnimatePresence>
-        {!isSidebarOpen && (
+        {isSidebarOpen && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setIsSidebarOpen(true)}
+            onClick={() => setIsSidebarOpen(false)}
             className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           />
         )}
@@ -256,7 +334,10 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
       {/* Sidebar */}
       <aside className={cn(
         "fixed lg:sticky top-0 z-50 h-screen transition-all duration-300 bg-white dark:bg-slate-900 border-r dark:border-slate-800 flex flex-col shadow-xl lg:shadow-none",
-        isSidebarOpen ? "w-72" : "w-20 -translate-x-full lg:translate-x-0"
+        isRTL ? "right-0 lg:right-auto" : "left-0",
+        isSidebarOpen
+          ? "w-72 translate-x-0"
+          : cn("w-72 lg:w-20 lg:translate-x-0", isRTL ? "translate-x-full" : "-translate-x-full")
       )}>
         <div className="flex flex-col h-full w-full overflow-hidden">
           {/* Logo */}
@@ -325,6 +406,14 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
               onClick={() => setActiveTab("logs")}
               isOpen={isSidebarOpen}
             />
+            <NavItem
+              icon={Bell}
+              label={isRTL ? "الإشعارات" : "Notifications"}
+              isActive={activeTab === "notifications"}
+              onClick={() => setActiveTab("notifications")}
+              isOpen={isSidebarOpen}
+              badge={unreadNotificationsCount > 0 ? String(Math.min(unreadNotificationsCount, 9)) : undefined}
+            />
             <NavItem 
               icon={MessageSquare} 
               label={isRTL ? "مركز الدعم" : "Support Center"} 
@@ -376,30 +465,49 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
         {/* Topbar */}
-        <header className="h-20 bg-white dark:bg-slate-900 border-b dark:border-slate-800 px-8 flex items-center justify-between sticky top-0 z-30">
+        <header className="h-20 bg-white dark:bg-slate-900 border-b dark:border-slate-800 px-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-30">
           <div className="flex items-center gap-4">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="lg:flex"
+              className="flex"
             >
-              <Menu className="w-5 h-5" />
+              {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
             <div className="relative hidden md:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className={cn("absolute top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400", isRTL ? "right-3" : "left-3")} />
               <input 
                 type="text" 
                 placeholder={isRTL ? "بحث عن أي شيء..." : "Search anything..."}
-                className="pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-lg border-0 text-sm w-64 focus:ring-2 focus:ring-cyan-500/20"
+                className={cn(
+                  "py-2 bg-slate-50 dark:bg-slate-800 rounded-lg border-0 text-sm w-64 focus:ring-2 focus:ring-cyan-500/20",
+                  isRTL ? "pr-10 pl-4 text-right font-cairo" : "pl-10 pr-4 text-left",
+                )}
               />
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative"
+              type="button"
+              aria-label={isRTL ? "الإشعارات" : "Notifications"}
+              onClick={() => setActiveTab("notifications")}
+            >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900" />
+              {unreadNotificationsCount > 0 && (
+                <span
+                  className={cn(
+                    "absolute -top-0.5 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold grid place-items-center border-2 border-white dark:border-slate-900",
+                    isRTL ? "-left-1" : "-right-1",
+                  )}
+                >
+                  {Math.min(unreadNotificationsCount, 9)}
+                </span>
+              )}
             </Button>
             <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 mx-2" />
             <div className="flex items-center gap-3">
@@ -413,7 +521,7 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
         </header>
 
         {/* Dashboard Content */}
-        <div className="p-8">
+        <div className="p-4 sm:p-6 lg:p-8">
           <AnimatePresence mode="wait">
             {activeTab === "overview" && (
               <motion.div 
@@ -504,24 +612,24 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-8"
               >
-                <div className="flex items-center justify-between mb-8">
+                <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h2 className="text-3xl font-bold dark:text-white">{isRTL ? "إدارة المحتوى" : "Content Management"}</h2>
                     <p className="text-muted-foreground">{isRTL ? "تحكم في جميع النصوص والرسوم في الموقع" : "Control all text and visuals on the site"}</p>
                   </div>
-                  <div className="flex gap-3">
-                    <Button variant="outline" onClick={resetConfig} className="gap-2">
+                  <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                    <Button variant="outline" onClick={resetConfig} className="w-full gap-2 sm:w-auto">
                        <RotateCcw className="w-4 h-4" />
                        {isRTL ? "إعادة ضبط" : "Reset"}
                     </Button>
-                    <Button onClick={handleSave} disabled={isSaving} className="gap-2 bg-gradient-to-r from-cyan-600 to-blue-600">
+                    <Button onClick={handleSave} disabled={isSaving} className="w-full gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 sm:w-auto">
                        <Save className={cn("w-4 h-4", isSaving && "animate-spin")} />
                        {isSaving ? (isRTL ? "جاري الحفظ..." : "Saving...") : (isRTL ? "حفظ التغييرات" : "Save Changes")}
                     </Button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
                    {/* Hero Section Control */}
                   <div className="bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800 p-8 space-y-6">
                     <div className="flex items-center gap-3 mb-2">
@@ -551,7 +659,7 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                             className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-cyan-500/20 outline-none dark:text-white font-cairo"
                           />
                        </div>
-                       <div className="grid grid-cols-2 gap-4">
+                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                           <div className="space-y-2">
                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Primary Button (EN)</label>
                             <input 
@@ -595,7 +703,7 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                                  setLocalConfig({...localConfig, stats: newStats});
                                }}><Trash2 className="w-3 h-3" /></Button>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                <input 
                                  type="text" 
                                  placeholder="Value (e.g. 1500+)"
@@ -638,7 +746,7 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                        <Button variant="outline" className="w-full rounded-xl border-dashed py-6" onClick={() => {
                          setLocalConfig({...localConfig, stats: [...localConfig.stats, { labelAr: "جديد", labelEn: "New Stat", value: "0" }]});
                        }}>
-                          <Plus className="w-4 h-4 mr-2" />
+                          <Plus className={cn("w-4 h-4", isRTL ? "ml-2" : "mr-2")} />
                           {isRTL ? "إضافة إحصائية جديدة" : "Add New Stat"}
                        </Button>
                     </div>
@@ -655,12 +763,12 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-8"
               >
-                 <div className="flex items-center justify-between mb-8">
+                 <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h2 className="text-3xl font-bold dark:text-white">{isRTL ? "تخصيص المظهر" : "Visual Identity Control"}</h2>
                       <p className="text-muted-foreground">{isRTL ? "تحكم في هوية الموقع البصرية وعناصر العرض" : "Master the site's visual identity and visibility"}</p>
                     </div>
-                    <Button onClick={handleSave} disabled={isSaving} className="gap-2 bg-gradient-to-r from-cyan-600 to-blue-600">
+                    <Button onClick={handleSave} disabled={isSaving} className="w-full gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 sm:w-auto">
                        <Save className={cn("w-4 h-4", isSaving && "animate-spin")} />
                        {isRTL ? "حفظ الإعدادات" : "Save Appearance"}
                     </Button>
@@ -772,19 +880,19 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-6"
               >
-                 <div className="flex items-center justify-between">
+                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h2 className="text-3xl font-bold dark:text-white">{isRTL ? "سجلات النظام" : "System Logs"}</h2>
                       <p className="text-muted-foreground">{isRTL ? "تتبع جميع الحركات والتغييرات في الموقع" : "Track all activities and changes on the site"}</p>
                     </div>
-                    <Button variant="outline" onClick={() => fetch("/api/logs").then(res => res.json()).then(setLogs)}>
-                        <RotateCcw className="w-4 h-4 mr-2" />
+                    <Button variant="outline" className="w-full sm:w-auto" onClick={() => fetch("/api/logs").then(res => res.json()).then(setLogs)}>
+                        <RotateCcw className={cn("w-4 h-4", isRTL ? "ml-2" : "mr-2")} />
                         {isRTL ? "تحديث" : "Refresh"}
                     </Button>
                  </div>
 
-                 <div className="bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800 overflow-hidden">
-                    <table className="w-full text-left">
+                 <div className="overflow-x-auto bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800">
+                    <table className={cn("w-full min-w-[720px]", isRTL ? "text-right" : "text-left")}>
                        <thead className="bg-slate-50 dark:bg-slate-800/50">
                           <tr>
                              <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">{isRTL ? "الوقت" : "Timestamp"}</th>
@@ -820,32 +928,41 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-6"
               >
-                 <div className="flex items-center justify-between">
+                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h2 className="text-3xl font-bold dark:text-white">{isRTL ? "إدارة المستخدمين" : "User Management"}</h2>
                       <p className="text-muted-foreground">{isRTL ? "إدارة صلاحيات وحسابات طاقم العمل" : "Manage staff permissions and accounts"}</p>
                     </div>
-                    <Button className="bg-cyan-600 hover:bg-cyan-700">
-                        <Plus className="w-4 h-4 mr-2" />
+                    <Button className="w-full bg-cyan-600 hover:bg-cyan-700 sm:w-auto transition-transform duration-150 active:scale-95" onClick={() => setIsAddUserOpen(true)}>
+                        <Plus className={cn("w-4 h-4", isRTL ? "ml-2" : "mr-2")} />
                         {isRTL ? "إضافة مستخدم" : "Add User"}
                     </Button>
                  </div>
 
+                 <AddUserPopup
+                   isOpen={isAddUserOpen}
+                   isRTL={isRTL}
+                   newUser={newUser}
+                   setNewUser={setNewUser}
+                   onClose={() => setIsAddUserOpen(false)}
+                   onSave={handleAddUser}
+                 />
+
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                       <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border dark:border-slate-800 flex items-center gap-4 hover:shadow-lg transition-all">
+                    {users.map((user) => (
+                       <div key={user.id} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border dark:border-slate-800 flex items-center gap-4 hover:shadow-lg transition-all">
                           <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0">
-                             <img src={`https://i.pravatar.cc/100?img=${i + 30}`} alt="User" />
+                             <img src={user.avatar} alt={user.name} />
                           </div>
                           <div>
-                             <h4 className="font-bold dark:text-white">User Name #{i}</h4>
-                             <p className="text-xs text-muted-foreground">user{i}@example.com</p>
+                             <h4 className="font-bold dark:text-white">{user.name}</h4>
+                             <p className="text-xs text-muted-foreground">{user.email}</p>
                              <div className="flex gap-2 mt-2">
                                 <span className={cn(
                                    "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase",
-                                   i === 1 ? "bg-cyan-100 text-cyan-600 dark:bg-cyan-500/20" : "bg-slate-100 text-slate-600 dark:bg-slate-800"
+                                   user.role === "admin" ? "bg-cyan-100 text-cyan-600 dark:bg-cyan-500/20" : "bg-slate-100 text-slate-600 dark:bg-slate-800"
                                 )}>
-                                   {i === 1 ? "Admin" : "Editor"}
+                                   {user.role === "admin" ? (isRTL ? "مدير" : "Admin") : (isRTL ? "دعم فني" : "Technical Support")}
                                 </span>
                              </div>
                           </div>
@@ -863,7 +980,7 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-6"
               >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div>
                     <h2 className="text-3xl font-bold dark:text-white">
                       {isRTL ? "مركز دعم العملاء" : "Customer Support Hub"}
@@ -872,26 +989,29 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                       {isRTL ? "إدارة جميع الدردشات والمحادثات النشطة" : "Manage all active support chats and conversations"}
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" className="rounded-xl border-slate-200 dark:border-slate-800">
+                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                    <Button variant="outline" className="w-full rounded-xl border-slate-200 dark:border-slate-800 sm:w-auto">
                         {isRTL ? "تحميل التقرير" : "Download Report"}
                     </Button>
-                    <Button className="rounded-xl bg-cyan-600 hover:bg-cyan-700">
+                    <Button className="w-full rounded-xl bg-cyan-600 hover:bg-cyan-700 sm:w-auto">
                         {isRTL ? "تحديث التلقائي" : "Auto Refresh"}
                     </Button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[calc(100vh-320px)] min-h-[500px]">
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:h-[calc(100vh-320px)] lg:min-h-[500px]">
                   {/* Chat List */}
                   <div className="lg:col-span-1 bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800 flex flex-col">
                     <div className="p-6 border-b dark:border-slate-800">
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Search className={cn("absolute top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400", isRTL ? "right-3" : "left-3")} />
                         <input 
                            type="text" 
                            placeholder={isRTL ? "بحث عن محادثة..." : "Search chats..."}
-                           className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl border-0 text-sm focus:ring-2 focus:ring-cyan-500/20"
+                           className={cn(
+                             "w-full py-2 bg-slate-50 dark:bg-slate-800 rounded-xl border-0 text-sm focus:ring-2 focus:ring-cyan-500/20",
+                             isRTL ? "pr-10 pl-4 text-right font-cairo" : "pl-10 pr-4 text-left",
+                           )}
                         />
                       </div>
                     </div>
@@ -909,11 +1029,12 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                                  <img src={`https://i.pravatar.cc/100?img=${chat.id + 20}`} alt={chat.user} />
                               </div>
                               <span className={cn(
-                                "absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900",
+                                "absolute -bottom-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900",
+                                isRTL ? "-left-1" : "-right-1",
                                 chat.status === "online" ? "bg-emerald-500" : "bg-slate-300"
                               )} />
                             </div>
-                            <div className="flex-1 text-left min-w-0">
+                            <div className={cn("flex-1 min-w-0", isRTL ? "text-right" : "text-left")}>
                                <div className="flex items-center justify-between mb-1">
                                   <h4 className="font-bold text-sm dark:text-white truncate">{chat.user}</h4>
                                   <span className="text-[10px] text-muted-foreground">{chat.time}</span>
@@ -926,7 +1047,7 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                   </div>
 
                   {/* Active Chat Window */}
-                  <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800 flex flex-col shadow-sm overflow-hidden">
+                  <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800 flex flex-col shadow-sm overflow-visible">
                      <div className="p-4 sm:p-6 border-b dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-4 min-w-0">
                            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0">
@@ -1115,28 +1236,15 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                             >
                               <Smile className="h-4 w-4" />
                             </Button>
-                            {showSupportEmoji && (
-                              <div
-                                className={cn(
-                                  "absolute bottom-full z-20 mb-2 flex w-[220px] flex-wrap gap-1 rounded-xl border bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-900",
-                                  isRTL ? "end-0" : "start-0",
-                                )}
-                              >
-                                {SUPPORT_EMOJIS.map((em) => (
-                                  <button
-                                    key={em}
-                                    type="button"
-                                    className="rounded-lg p-1.5 text-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-                                    onClick={() => {
-                                      setSupportReply((p) => p + em)
-                                      setShowSupportEmoji(false)
-                                    }}
-                                  >
-                                    {em}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
+                            <EmojiPopup
+                              isOpen={showSupportEmoji}
+                              isRTL={isRTL}
+                              emojis={SUPPORT_STICKERS}
+                              onPick={(emoji) => {
+                                setSupportReply((p) => p + emoji)
+                                setShowSupportEmoji(false)
+                              }}
+                            />
                           </div>
                           <div className="relative">
                             <Button
@@ -1153,29 +1261,15 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                             >
                               <Bookmark className="h-4 w-4" />
                             </Button>
-                            {showSupportCanned && (
-                              <div
-                                className={cn(
-                                  "absolute bottom-full z-20 mb-2 max-h-56 w-64 overflow-y-auto rounded-xl border bg-white py-1 shadow-xl dark:border-slate-700 dark:bg-slate-900",
-                                  isRTL ? "end-0" : "start-0",
-                                )}
-                              >
-                                {cannedReplies.map((c) => (
-                                  <button
-                                    key={c.id}
-                                    type="button"
-                                    className="block w-full px-3 py-2 text-start text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
-                                    onClick={() => {
-                                      setSupportReply((prev) => (prev ? `${prev}\n` : "") + c.body)
-                                      setShowSupportCanned(false)
-                                    }}
-                                  >
-                                    <span className="block font-semibold text-foreground">{c.label}</span>
-                                    <span className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{c.body}</span>
-                                  </button>
-                                ))}
-                              </div>
-                            )}
+                            <CannedRepliesPopup
+                              isOpen={showSupportCanned}
+                              isRTL={isRTL}
+                              replies={cannedReplies}
+                              onPick={(body) => {
+                                setSupportReply((prev) => (prev ? `${prev}\n` : "") + body)
+                                setShowSupportCanned(false)
+                              }}
+                            />
                           </div>
                         </div>
 
@@ -1242,6 +1336,61 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
               </motion.div>
             )}
 
+            {activeTab === "notifications" && (
+              <motion.div
+                key="notifications"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className={cn("text-2xl font-bold dark:text-white", isRTL && "font-cairo")}>
+                      {isRTL ? "الإشعارات" : "Notifications"}
+                    </h2>
+                    <p className={cn("text-sm text-muted-foreground", isRTL && "font-cairo")}>
+                      {isRTL ? "عرض كل الإشعارات في صفحة واحدة بدل النوافذ المنبثقة" : "View all notifications in a dedicated page instead of popups"}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })))}
+                  >
+                    {isRTL ? "تعليم الكل كمقروء" : "Mark all as read"}
+                  </Button>
+                </div>
+
+                <div className="overflow-hidden rounded-2xl border bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                  {notifications.length === 0 ? (
+                    <p className={cn("p-6 text-sm text-muted-foreground", isRTL && "font-cairo")}>
+                      {isRTL ? "لا توجد إشعارات حالياً" : "No notifications right now"}
+                    </p>
+                  ) : (
+                    notifications.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setNotifications((prev) => prev.map((n) => (n.id === item.id ? { ...n, unread: false } : n)))}
+                        className={cn(
+                          "w-full border-b px-5 py-4 text-start transition-colors last:border-b-0 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/70",
+                          item.unread && "bg-cyan-50/60 dark:bg-cyan-500/10",
+                        )}
+                      >
+                        <div className="mb-1 flex items-center justify-between gap-2">
+                          <p className={cn("text-sm font-semibold dark:text-white", isRTL && "font-cairo")}>{item.title}</p>
+                          {item.unread && <span className="h-2 w-2 rounded-full bg-cyan-500" />}
+                        </div>
+                        <p className={cn("text-xs text-muted-foreground", isRTL && "font-cairo")}>{item.message}</p>
+                        <p className={cn("mt-1 text-[10px] text-slate-400", isRTL && "font-cairo")}>{item.time}</p>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            )}
+
             {activeTab === "products" && (
               <motion.div 
                 key="products"
@@ -1250,116 +1399,30 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-8"
               >
-                <div className="flex items-center justify-between mb-8">
+                <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h2 className="text-3xl font-bold dark:text-white">{isRTL ? "إدارة المنتجات" : "Products Management"}</h2>
                     <p className="text-muted-foreground">{isRTL ? "أضف وعدل المنتجات والخدمات التي تقدمها" : "Add and edit the products and services you offer"}</p>
                   </div>
-                  <Button onClick={() => setEditingProduct({ nameAr: "", nameEn: "", price: 0, category: "", descriptionAr: "", descriptionEn: "" })} className="gap-2 bg-gradient-to-r from-cyan-600 to-blue-600">
+                  <Button onClick={() => setEditingProduct({ nameAr: "", nameEn: "", price: 0, category: "", descriptionAr: "", descriptionEn: "" })} className="w-full gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 sm:w-auto">
                     <Plus className="w-4 h-4" />
                     {isRTL ? "إضافة منتج" : "Add Product"}
                   </Button>
                 </div>
 
-                {/* Edit/Create Modal Simulation */}
-                {(editingProduct || (newProduct.nameEn && !editingProduct)) && (
-                   <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
-                      <motion.div 
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-                      >
-                         <h3 className="text-2xl font-bold dark:text-white mb-6">
-                            {editingProduct?.id ? (isRTL ? "تعديل المنتج" : "Edit Product") : (isRTL ? "إضافة منتج جديد" : "Add New Product")}
-                         </h3>
-                         <div className="grid grid-cols-2 gap-4 mb-6">
-                            <div className="space-y-2">
-                               <label className="text-xs font-bold text-slate-500 uppercase">Name (EN)</label>
-                               <input 
-                                  type="text"
-                                  value={editingProduct ? editingProduct.nameEn : newProduct.nameEn}
-                                  onChange={(e) => editingProduct ? setEditingProduct({...editingProduct, nameEn: e.target.value}) : setNewProduct({...newProduct, nameEn: e.target.value})}
-                                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white"
-                               />
-                            </div>
-                            <div className="space-y-2">
-                               <label className="text-xs font-bold text-slate-500 uppercase">Name (AR)</label>
-                               <input 
-                                  type="text" dir="rtl"
-                                  value={editingProduct ? editingProduct.nameAr : newProduct.nameAr}
-                                  onChange={(e) => editingProduct ? setEditingProduct({...editingProduct, nameAr: e.target.value}) : setNewProduct({...newProduct, nameAr: e.target.value})}
-                                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo"
-                               />
-                            </div>
-                            <div className="space-y-2">
-                               <label className="text-xs font-bold text-slate-500 uppercase">Price ($)</label>
-                               <input 
-                                  type="number"
-                                  value={editingProduct ? editingProduct.price : newProduct.price}
-                                  onChange={(e) => editingProduct ? setEditingProduct({...editingProduct, price: Number(e.target.value)}) : setNewProduct({...newProduct, price: Number(e.target.value)})}
-                                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white"
-                               />
-                            </div>
-                            <div className="space-y-2">
-                               <label className="text-xs font-bold text-slate-500 uppercase">Category</label>
-                               <input 
-                                  type="text"
-                                  value={editingProduct ? editingProduct.category : newProduct.category}
-                                  onChange={(e) => editingProduct ? setEditingProduct({...editingProduct, category: e.target.value}) : setNewProduct({...newProduct, category: e.target.value})}
-                                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white"
-                               />
-                            </div>
-                            
-                            <div className="space-y-2">
-                               <label className="text-xs font-bold text-slate-500 uppercase">Image URL</label>
-                               <input 
-                                  type="text"
-                                  placeholder="https://..."
-                                  value={editingProduct ? editingProduct.imageUrl : newProduct.imageUrl}
-                                  onChange={(e) => editingProduct ? setEditingProduct({...editingProduct, imageUrl: e.target.value}) : setNewProduct({...newProduct, imageUrl: e.target.value})}
-                                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white"
-                               />
-                            </div>
-                            <div className="space-y-2">
-                               <label className="text-xs font-bold text-slate-500 uppercase">Video URL</label>
-                               <input 
-                                  type="text"
-                                  placeholder="YouTube link..."
-                                  value={editingProduct ? editingProduct.videoUrl : newProduct.videoUrl}
-                                  onChange={(e) => editingProduct ? setEditingProduct({...editingProduct, videoUrl: e.target.value}) : setNewProduct({...newProduct, videoUrl: e.target.value})}
-                                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white"
-                               />
-                            </div>
-
-                            <div className="col-span-2 space-y-2">
-                               <label className="text-xs font-bold text-slate-500 uppercase">Description (EN)</label>
-                               <textarea 
-                                  value={editingProduct ? editingProduct.descriptionEn : newProduct.descriptionEn}
-                                  onChange={(e) => editingProduct ? setEditingProduct({...editingProduct, descriptionEn: e.target.value}) : setNewProduct({...newProduct, descriptionEn: e.target.value})}
-                                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white h-24"
-                               />
-                            </div>
-                            <div className="col-span-2 space-y-2">
-                               <label className="text-xs font-bold text-slate-500 uppercase">Description (AR)</label>
-                               <textarea 
-                                  dir="rtl"
-                                  value={editingProduct ? editingProduct.descriptionAr : newProduct.descriptionAr}
-                                  onChange={(e) => editingProduct ? setEditingProduct({...editingProduct, descriptionAr: e.target.value}) : setNewProduct({...newProduct, descriptionAr: e.target.value})}
-                                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo h-24"
-                               />
-                            </div>
-                         </div>
-                         <div className="flex gap-4">
-                            <Button className="flex-1 bg-cyan-600" onClick={editingProduct?.id ? handleUpdateProduct : handleCreateProduct}>
-                               {isRTL ? "حفظ" : "Save"}
-                            </Button>
-                            <Button variant="outline" className="flex-1" onClick={() => { setEditingProduct(null); setNewProduct({ nameAr: "", nameEn: "", price: 0, category: "", descriptionAr: "", descriptionEn: "", imageUrl: "", videoUrl: "" }) }}>
-                               {isRTL ? "إلغاء" : "Cancel"}
-                            </Button>
-                         </div>
-                      </motion.div>
-                   </div>
-                )}
+                <ProductPopup
+                  isOpen={Boolean(editingProduct || (newProduct.nameEn && !editingProduct))}
+                  isRTL={isRTL}
+                  editingProduct={editingProduct}
+                  newProduct={newProduct}
+                  setEditingProduct={setEditingProduct}
+                  setNewProduct={setNewProduct}
+                  onSave={editingProduct?.id ? handleUpdateProduct : handleCreateProduct}
+                  onClose={() => {
+                    setEditingProduct(null)
+                    setNewProduct({ nameAr: "", nameEn: "", price: 0, category: "", descriptionAr: "", descriptionEn: "", imageUrl: "", videoUrl: "" })
+                  }}
+                />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                    {isProductsLoading ? (
@@ -1429,52 +1492,118 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                 exit={{ opacity: 0, x: -20 }}
                 className="max-w-4xl"
               >
-                 <h2 className="text-3xl font-bold dark:text-white mb-8">
-                   {isRTL ? "إعدادات النظام" : "System Settings"}
-                 </h2>
-                 <div className="bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800 p-8 space-y-8">
-                    <div className="flex items-center justify-between">
-                       <div>
-                          <h4 className="font-bold dark:text-white">{isRTL ? "تنبيهات البريد الالكتروني" : "Email Notifications"}</h4>
-                          <p className="text-sm text-muted-foreground">{isRTL ? "تلقي تقارير يومية عن نشاط المستخدمين" : "Receive daily reports about user activity"}</p>
-                       </div>
-                       <div className="w-12 h-6 bg-cyan-600 rounded-full relative shadow-inner">
-                          <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-md" />
-                       </div>
+                <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="text-3xl font-bold dark:text-white">{isRTL ? "إعدادات التواصل" : "Contact Settings"}</h2>
+                    <p className="text-muted-foreground">{isRTL ? "تعديل رقم الاتصال وروابط المنصات بشكل مباشر" : "Manage phone, WhatsApp, email, website, and social links"}</p>
+                  </div>
+                  <Button onClick={handleSave} disabled={isSaving} className="w-full gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 sm:w-auto">
+                    <Save className={cn("h-4 w-4", isSaving && "animate-spin")} />
+                    {isSaving ? (isRTL ? "جاري الحفظ..." : "Saving...") : (isRTL ? "حفظ الإعدادات" : "Save Settings")}
+                  </Button>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800 p-6 sm:p-8 space-y-8">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "رقم الاتصال (ظاهر)" : "Phone (displayed)"}</label>
+                      <input
+                        type="text"
+                        value={localConfig.contact.phone}
+                        onChange={(e) => setLocalConfig({ ...localConfig, contact: { ...localConfig.contact, phone: e.target.value } })}
+                        className={cn("w-full rounded-xl border bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white", isRTL && "text-right font-cairo")}
+                      />
                     </div>
-                    <div className="h-px bg-slate-100 dark:bg-slate-800" />
-                    <div className="flex items-center justify-between">
-                       <div>
-                          <h4 className="font-bold dark:text-white">{isRTL ? "وضع الصيانة" : "Maintenance Mode"}</h4>
-                          <p className="text-sm text-muted-foreground">{isRTL ? "سيتم إغلاق الواجهة الأمامية للمستخدمين" : "Front-end will be closed for users"}</p>
-                       </div>
-                       <div className="w-12 h-6 bg-slate-300 dark:bg-slate-700 rounded-full relative">
-                          <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-md" />
-                       </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "رقم واتساب (دولي)" : "WhatsApp number (international)"}</label>
+                      <input
+                        type="text"
+                        value={localConfig.contact.whatsapp}
+                        onChange={(e) => setLocalConfig({ ...localConfig, contact: { ...localConfig.contact, whatsapp: e.target.value } })}
+                        placeholder="9647XXXXXXXX"
+                        className="w-full rounded-xl border bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
                     </div>
-                    <div className="h-px bg-slate-100 dark:bg-slate-800" />
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                       <div>
-                          <h4 className="font-bold dark:text-white">{isRTL ? "لغة النظام الافتراضية" : "Default System Language"}</h4>
-                       </div>
-                       <div className="relative w-full min-w-0 sm:w-auto sm:min-w-[13.5rem]">
-                          <select
-                            aria-label={isRTL ? "لغة النظام الافتراضية" : "Default system language"}
-                            className={cn(
-                              "w-full cursor-pointer appearance-none rounded-lg border-0 bg-slate-50 py-2.5 ps-3 pe-10 text-sm outline-none transition-shadow focus:ring-2 focus:ring-cyan-500/25 dark:bg-slate-800 dark:text-white",
-                              isRTL && "text-right font-cairo",
-                            )}
-                          >
-                            <option value="ar">{isRTL ? "العربية" : "Arabic"}</option>
-                            <option value="en">{isRTL ? "الإنجليزية" : "English"}</option>
-                          </select>
-                          <ChevronDown
-                            className="pointer-events-none absolute top-1/2 size-4 -translate-y-1/2 text-slate-500 end-3 dark:text-slate-400"
-                            aria-hidden
-                          />
-                       </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "البريد الإلكتروني" : "Email"}</label>
+                      <input
+                        type="email"
+                        value={localConfig.contact.email}
+                        onChange={(e) => setLocalConfig({ ...localConfig, contact: { ...localConfig.contact, email: e.target.value } })}
+                        className="w-full rounded-xl border bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
                     </div>
-                 </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "رابط صفحة الموقع" : "Website page URL"}</label>
+                      <input
+                        type="text"
+                        value={localConfig.contact.websiteUrl}
+                        onChange={(e) => setLocalConfig({ ...localConfig, contact: { ...localConfig.contact, websiteUrl: e.target.value } })}
+                        placeholder="/location"
+                        className="w-full rounded-xl border bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "العنوان (عربي)" : "Address (Arabic)"}</label>
+                      <input
+                        type="text"
+                        value={localConfig.contact.addressAr}
+                        onChange={(e) => setLocalConfig({ ...localConfig, contact: { ...localConfig.contact, addressAr: e.target.value } })}
+                        className="w-full rounded-xl border bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white font-cairo"
+                      />
+                    </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "العنوان (إنجليزي)" : "Address (English)"}</label>
+                      <input
+                        type="text"
+                        value={localConfig.contact.addressEn}
+                        onChange={(e) => setLocalConfig({ ...localConfig, contact: { ...localConfig.contact, addressEn: e.target.value } })}
+                        className="w-full rounded-xl border bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-slate-100 dark:bg-slate-800" />
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Facebook</label>
+                      <input
+                        type="url"
+                        value={localConfig.contact.socials.facebook}
+                        onChange={(e) => setLocalConfig({ ...localConfig, contact: { ...localConfig.contact, socials: { ...localConfig.contact.socials, facebook: e.target.value } } })}
+                        className="w-full rounded-xl border bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Twitter / X</label>
+                      <input
+                        type="url"
+                        value={localConfig.contact.socials.twitter}
+                        onChange={(e) => setLocalConfig({ ...localConfig, contact: { ...localConfig.contact, socials: { ...localConfig.contact.socials, twitter: e.target.value } } })}
+                        className="w-full rounded-xl border bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Instagram</label>
+                      <input
+                        type="url"
+                        value={localConfig.contact.socials.instagram}
+                        onChange={(e) => setLocalConfig({ ...localConfig, contact: { ...localConfig.contact, socials: { ...localConfig.contact.socials, instagram: e.target.value } } })}
+                        className="w-full rounded-xl border bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">LinkedIn</label>
+                      <input
+                        type="url"
+                        value={localConfig.contact.socials.linkedin}
+                        onChange={(e) => setLocalConfig({ ...localConfig, contact: { ...localConfig.contact, socials: { ...localConfig.contact.socials, linkedin: e.target.value } } })}
+                        className="w-full rounded-xl border bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

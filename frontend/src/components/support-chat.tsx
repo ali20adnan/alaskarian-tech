@@ -7,12 +7,15 @@ import { Button } from "@/src/components/ui/button"
 import { cn } from "@/src/lib/utils"
 import { useLanguage } from "@/src/contexts/language-context"
 import { useSiteConfig } from "@/src/contexts/site-config-context"
+import { EmojiPopup } from "@/src/components/admin/POPUPS/EmojiPopup"
+import { SUPPORT_STICKERS } from "@/src/lib/support-stickers"
 
 interface Message {
   id: string
   text: string
   sender: "user" | "support"
   timestamp: Date
+  imageUrl?: string
 }
 
 export function SupportChat() {
@@ -20,6 +23,9 @@ export function SupportChat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const [showEmojiPopup, setShowEmojiPopup] = useState(false)
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null)
+  const mediaInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { isRTL } = useLanguage()
   const { config } = useSiteConfig()
@@ -58,17 +64,20 @@ export function SupportChat() {
   }, [messages])
 
   const handleSend = () => {
-    if (!inputValue.trim()) return
+    if (!inputValue.trim() && !mediaPreview) return
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: inputValue,
+      text: inputValue.trim() || (isRTL ? "مرفق صورة" : "Image attachment"),
       sender: "user",
       timestamp: new Date(),
+      imageUrl: mediaPreview || undefined,
     }
 
     setMessages((prev) => [...prev, userMessage])
     setInputValue("")
+    setMediaPreview(null)
+    setShowEmojiPopup(false)
     setIsTyping(true)
 
     // Simulate support response
@@ -208,6 +217,13 @@ export function SupportChat() {
                     isRTL && "font-cairo"
                   )}
                 >
+                  {message.imageUrl && (
+                    <img
+                      src={message.imageUrl}
+                      alt={isRTL ? "صورة مرفقة" : "Attached image"}
+                      className="mb-2 max-h-48 w-full rounded-lg object-cover ring-1 ring-black/10 dark:ring-white/20"
+                    />
+                  )}
                   <p className="text-sm leading-relaxed">{message.text}</p>
                   <span
                     className={cn(
@@ -242,14 +258,60 @@ export function SupportChat() {
 
           {/* Input Area */}
           <div className="border-t border-border dark:border-slate-800 bg-background dark:bg-slate-900/80 backdrop-blur-md">
+            {mediaPreview && (
+              <div className="px-3 pt-3">
+                <div className="flex items-center gap-3 rounded-xl border border-dashed border-slate-300 p-2 dark:border-slate-700">
+                  <img src={mediaPreview} alt="" className="h-14 w-14 rounded-lg object-cover" />
+                  <p className="min-w-0 flex-1 text-xs text-muted-foreground">
+                    {isRTL ? "معاينة الوسائط - سترسل مع الرسالة" : "Media preview - will be sent with message"}
+                  </p>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setMediaPreview(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-2 p-3">
               <div className="flex items-center gap-1 shrink-0">
-                <button className="p-2 rounded-full hover:bg-muted dark:hover:bg-slate-800 transition-colors text-muted-foreground hover:text-cyan-500">
+                <input
+                  ref={mediaInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (!file || !file.type.startsWith("image/")) return
+                    const reader = new FileReader()
+                    reader.onload = () => setMediaPreview(String(reader.result))
+                    reader.readAsDataURL(file)
+                    e.target.value = ""
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => mediaInputRef.current?.click()}
+                  className="p-2 rounded-full hover:bg-muted dark:hover:bg-slate-800 transition-colors text-muted-foreground hover:text-cyan-500"
+                >
                   <Paperclip className="w-5 h-5" />
                 </button>
-                <button className="p-2 rounded-full hover:bg-muted dark:hover:bg-slate-800 transition-colors text-muted-foreground hover:text-cyan-500">
-                  <Smile className="w-5 h-5" />
-                </button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowEmojiPopup((prev) => !prev)}
+                    className="p-2 rounded-full hover:bg-muted dark:hover:bg-slate-800 transition-colors text-muted-foreground hover:text-cyan-500"
+                  >
+                    <Smile className="w-5 h-5" />
+                  </button>
+                  <EmojiPopup
+                    isOpen={showEmojiPopup}
+                    isRTL={isRTL}
+                    emojis={SUPPORT_STICKERS}
+                    onPick={(emoji) => {
+                      setInputValue((prev) => prev + emoji)
+                      setShowEmojiPopup(false)
+                    }}
+                  />
+                </div>
               </div>
               
               <input
@@ -266,7 +328,7 @@ export function SupportChat() {
 
               <Button
                 onClick={handleSend}
-                disabled={!inputValue.trim()}
+                disabled={!inputValue.trim() && !mediaPreview}
                 size="icon"
                 className="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:shadow-lg hover:shadow-cyan-500/20 active:scale-95 disabled:opacity-50 transition-all"
               >

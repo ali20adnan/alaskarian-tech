@@ -7,6 +7,7 @@ import { Moon, Sun, Menu, X, Phone, ChevronDown } from "lucide-react"
 import { Button } from "@/src/components/ui/button"
 import { cn } from "@/src/lib/utils"
 import { useLanguage, type Language } from "@/src/contexts/language-context"
+import { useSiteConfig } from "@/src/contexts/site-config-context"
 
 type DropdownKey = "systems" | "services" | "contact"
 
@@ -17,6 +18,8 @@ export function Navbar() {
   const [activeDropdown, setActiveDropdown] = useState<DropdownKey | null>(null)
   const { theme, setTheme } = useTheme()
   const { language, setLanguage, t, isRTL } = useLanguage()
+  const { config } = useSiteConfig()
+  const whatsappLink = `https://wa.me/${(config.contact.whatsapp || config.contact.phone).replace(/[^\d]/g, "")}`
 
   const navLinks: { href: string; label: string; hasDropdown: boolean; dropdownKey?: DropdownKey }[] = [
     { href: "#systems", label: t.nav.projects, hasDropdown: true, dropdownKey: "systems" },
@@ -159,12 +162,14 @@ export function Navbar() {
           <div className="flex items-center gap-4">
             {/* Phone Number */}
             <a 
-              href="tel:5252" 
+              href={whatsappLink}
+              target="_blank"
+              rel="noreferrer"
               className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               <Phone className="w-4 h-4" />
               <span className={isRTL ? "font-cairo" : ""}>
-                {isRTL ? "خدمة العملاء 5252" : "Customer Service 5252"}
+                {isRTL ? `خدمة العملاء ${config.contact.phone}` : `Customer Service ${config.contact.phone}`}
               </span>
             </a>
 
@@ -255,14 +260,16 @@ export function Navbar() {
             
             {/* Mobile Phone */}
             <a 
-              href="tel:5252" 
+              href={whatsappLink}
+              target="_blank"
+              rel="noreferrer"
               className={cn(
                 "flex items-center gap-2 px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-background rounded-xl transition-all duration-300",
                 isRTL && "font-cairo"
               )}
             >
               <Phone className="w-4 h-4" />
-              <span>{isRTL ? "خدمة العملاء 5252" : "Customer Service 5252"}</span>
+              <span>{isRTL ? `خدمة العملاء ${config.contact.phone}` : `Customer Service ${config.contact.phone}`}</span>
             </a>
 
             {/* Mobile Language Switcher */}

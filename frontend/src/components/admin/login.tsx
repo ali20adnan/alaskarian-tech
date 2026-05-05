@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { Link } from "react-router-dom"
 import { motion } from "motion/react"
-import { Lock, User, Eye, EyeOff, Loader2, ArrowRight, ExternalLink } from "lucide-react"
+import { User, Eye, EyeOff, Loader2, ArrowRight } from "lucide-react"
 import { Button } from "@/src/components/ui/button"
 import { cn } from "@/src/lib/utils"
 
@@ -34,7 +34,7 @@ export function AdminLogin({ onLogin, isRTL }: AdminLoginProps) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-[#0a0c10] p-4">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0c10] p-4 sm:p-6 lg:p-8">
       <Link
         to="/"
         className={cn(
@@ -42,28 +42,23 @@ export function AdminLogin({ onLogin, isRTL }: AdminLoginProps) {
           isRTL && "font-cairo",
         )}
       >
-        <ExternalLink className="h-4 w-4" />
         {isRTL ? "العودة للموقع" : "Back to site"}
       </Link>
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
+        className="mx-auto w-full max-w-xl overflow-hidden rounded-3xl border border-white/70 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 sm:p-8 lg:p-10"
       >
-        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl dark:shadow-cyan-500/5 border border-white dark:border-slate-800 p-8">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-cyan-600 text-white mb-6 transform rotate-3 shadow-lg shadow-cyan-500/20">
-              <Lock className="w-8 h-8" />
-            </div>
-            <h1 className="text-3xl font-bold dark:text-white mb-3">
-              {isRTL ? "بوابة المسؤول" : "Admin Portal"}
-            </h1>
-            <p className="text-muted-foreground">
-              {isRTL ? "يرجى تسجيل الدخول للمتابعة" : "Please sign in to continue"}
-            </p>
-          </div>
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold dark:text-white mb-3">
+            {isRTL ? "بوابة المسؤول" : "Admin Portal"}
+          </h1>
+          <p className="text-muted-foreground">
+            {isRTL ? "يرجى تسجيل الدخول للمتابعة" : "Please sign in to continue"}
+          </p>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <label className="text-sm font-medium dark:text-slate-300 px-1">
                 {isRTL ? "اسم المستخدم" : "Username"}
@@ -94,19 +89,13 @@ export function AdminLogin({ onLogin, isRTL }: AdminLoginProps) {
                 {isRTL ? "كلمة المرور" : "Password"}
               </label>
               <div className="relative group">
-                <div className={cn(
-                  "absolute inset-y-0 flex items-center text-muted-foreground group-focus-within:text-cyan-500 transition-colors px-4",
-                  isRTL ? "right-0" : "left-0"
-                )}>
-                  <Lock className="w-5 h-5" />
-                </div>
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className={cn(
                     "w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 outline-none transition-all placeholder:text-slate-400 dark:text-white",
-                    isRTL ? "pr-12 pl-12 text-right" : "pl-12 pr-12"
+                    isRTL ? "pr-4 pl-12 text-right" : "pl-4 pr-12"
                   )}
                   placeholder="••••••••"
                   required
@@ -148,12 +137,11 @@ export function AdminLogin({ onLogin, isRTL }: AdminLoginProps) {
                 </span>
               )}
             </Button>
-          </form>
+        </form>
 
-          <p className="mt-8 text-center text-sm text-muted-foreground">
-            {isRTL ? "بيانات الدخول الافتراضية: admin / admin123" : "Default credentials: admin / admin123"}
-          </p>
-        </div>
+        <p className="mt-8 text-center text-sm text-muted-foreground">
+          {isRTL ? "بيانات الدخول الافتراضية: admin / admin123" : "Default credentials: admin / admin123"}
+        </p>
       </motion.div>
     </div>
   )
