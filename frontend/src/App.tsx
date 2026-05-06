@@ -25,6 +25,7 @@ import { cn } from "@/src/lib/utils"
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom"
 import { DetailedPage } from "@/src/pages/detailed-page"
 import { LocationPage } from "@/src/pages/location-page"
+import { SystemsPage } from "@/src/pages/systems-page"
 
 function MainAppContent() {
   const { pathname } = useLocation()
@@ -91,6 +92,7 @@ function MainAppContent() {
 
         <Route path="/:type/:id" element={<DetailedPage />} />
         <Route path="/location" element={<LocationPage />} />
+        <Route path="/systems" element={<SystemsPage />} />
         
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
-import { X, ChevronLeft, ChevronRight, Monitor, Check, Play } from "lucide-react"
+import { X, ChevronLeft, ChevronRight, Monitor, Check, Play, ImageOff, VideoOff } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
 import { cn } from "@/src/lib/utils"
 import { useLanguage } from "@/src/contexts/language-context"
@@ -73,10 +73,19 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
   const t = isRTL ? translations.ar : translations.en
   const [currentImage, setCurrentImage] = useState(0)
   const [mounted, setMounted] = useState(false)
+  const [headerImageFailed, setHeaderImageFailed] = useState(false)
+  const [previewImageFailed, setPreviewImageFailed] = useState(false)
+  const [previewVideoFailed, setPreviewVideoFailed] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  useEffect(() => {
+    setHeaderImageFailed(false)
+    setPreviewImageFailed(false)
+    setPreviewVideoFailed(false)
+  }, [product?.id, isOpen])
 
   // Close on escape key
   useEffect(() => {
@@ -102,6 +111,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
 
   const nextImage = () => setCurrentImage((prev) => (prev + 1) % screenshots.length)
   const prevImage = () => setCurrentImage((prev) => (prev - 1 + screenshots.length) % screenshots.length)
+  const youtubeId = product?.videoUrl?.match(/(?:v=|be\/)([^?&]+)/)?.[1] ?? null
 
   return createPortal(
     <AnimatePresence>
@@ -152,14 +162,19 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
               {/* Product Image */}
               <div className="md:w-1/3 flex-shrink-0 w-full">
                 <div className="bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-xl overflow-hidden aspect-square flex items-center justify-center">
-                  {product.imageUrl ? (
-                    <img src={product.imageUrl} alt={product.title} className="w-full h-full object-cover" />
+                  {product.imageUrl && !headerImageFailed ? (
+                    <img
+                      src={product.imageUrl}
+                      alt={product.title}
+                      className="w-full h-full object-cover"
+                      onError={() => setHeaderImageFailed(true)}
+                    />
                   ) : (
                     <div className="relative">
                       <div className="w-32 h-24 sm:w-40 sm:h-28 bg-slate-300 dark:bg-slate-600 rounded-t-lg" />
                       <div className="w-32 sm:w-40 h-3 bg-slate-400 dark:bg-slate-500 rounded-b-sm" />
                       <div className="w-16 sm:w-20 h-2 bg-slate-400 dark:bg-slate-500 mx-auto mt-1 rounded-full" />
-                      <Monitor className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 text-slate-400 dark:text-slate-500" />
+                      <ImageOff className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 text-slate-400 dark:text-slate-500" />
                     </div>
                   )}
                 </div>
@@ -264,27 +279,41 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                 <div className="flex">
                     <div className="shrink-0 w-full aspect-video p-1">
                       <div className="w-full h-full bg-slate-200 dark:bg-slate-800 rounded-xl overflow-hidden relative border border-slate-200 dark:border-slate-700 shadow-lg">
-                        {product.videoUrl ? (
+                        {product.videoUrl && !previewVideoFailed ? (
                           <div className="w-full h-full">
-                            {product.videoUrl.includes("youtube.com") || product.videoUrl.includes("youtu.be") ? (
-                               <iframe 
+                            {(product.videoUrl.includes("youtube.com") || product.videoUrl.includes("youtu.be")) && youtubeId ? (
+                               <iframe
                                   className="w-full h-full"
-                                  src={`https://www.youtube.com/embed/${product.videoUrl.split(/v=|be\//)[1].split(/[?&]/)[0]}`}
+                                  src={`https://www.youtube.com/embed/${youtubeId}`}
                                   title="Product Video"
                                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-view"
                                   allowFullScreen
                                />
                             ) : (
-                               <video src={product.videoUrl} controls className="w-full h-full object-contain bg-black" />
+                               <video
+                                  src={product.videoUrl}
+                                  controls
+                                  className="w-full h-full object-contain bg-black"
+                                  onError={() => setPreviewVideoFailed(true)}
+                               />
                             )}
                           </div>
                         ) : (
                           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 border-4 border-white/10">
-                            {product.imageUrl ? (
-                              <img src={product.imageUrl} alt="Preview" className="w-full h-full object-contain" />
+                            {product.imageUrl && !previewImageFailed ? (
+                              <img
+                                src={product.imageUrl}
+                                alt="Preview"
+                                className="w-full h-full object-contain"
+                                onError={() => setPreviewImageFailed(true)}
+                              />
                             ) : (
-                              <div className="w-16 h-16 rounded-full bg-cyan-500/90 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow-xl">
-                                <Play className="w-6 h-6 text-white fill-white ml-1" />
+                              <div className="flex h-full w-full items-center justify-center">
+                                {product.videoUrl ? (
+                                  <VideoOff className="w-14 h-14 text-slate-400" />
+                                ) : (
+                                  <ImageOff className="w-14 h-14 text-slate-400" />
+                                )}
                               </div>
                             )}
                           </div>
