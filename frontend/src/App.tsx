@@ -29,7 +29,7 @@ import { LocationPage } from "@/src/pages/location-page"
 function MainAppContent() {
   const { pathname } = useLocation()
   const isAdminRoute = pathname.startsWith("/admin")
-  const { language } = useLanguage()
+  const { language, setLanguage } = useLanguage()
   const { config } = useSiteConfig()
   const isRTL = language === 'ar'
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false)
@@ -79,7 +79,11 @@ function MainAppContent() {
         
         <Route path="/admin" element={
           isAdminAuthenticated ? (
-            <AdminDashboard onLogout={handleAdminLogout} isRTL={isRTL} />
+            <AdminDashboard
+              onLogout={handleAdminLogout}
+              isRTL={isRTL}
+              onToggleLanguage={() => setLanguage(isRTL ? "en" : "ar")}
+            />
           ) : (
             <AdminLogin onLogin={handleAdminLogin} isRTL={isRTL} />
           )
@@ -108,7 +112,7 @@ export default function App() {
       attribute="class"
       defaultTheme="system"
       enableSystem
-      disableTransitionOnChange={false}
+      disableTransitionOnChange
     >
       <BrowserRouter>
         <LanguageProvider>

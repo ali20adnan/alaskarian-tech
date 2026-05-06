@@ -15,8 +15,9 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [isThemeChanging, setIsThemeChanging] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<DropdownKey | null>(null)
-  const { theme, setTheme } = useTheme()
+  const { theme, resolvedTheme, setTheme } = useTheme()
   const { language, setLanguage, t, isRTL } = useLanguage()
   const { config } = useSiteConfig()
   const whatsappLink = `https://wa.me/${(config.contact.whatsapp || config.contact.phone).replace(/[^\d]/g, "")}`
@@ -37,8 +38,18 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  useEffect(() => {
+    if (!isThemeChanging) return
+    const t = window.setTimeout(() => setIsThemeChanging(false), 250)
+    return () => window.clearTimeout(t)
+  }, [isThemeChanging])
+
+  const currentTheme = mounted ? (theme === "system" ? resolvedTheme : theme) : undefined
+
   const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark")
+    if (isThemeChanging || !currentTheme) return
+    setIsThemeChanging(true)
+    setTheme(currentTheme === "dark" ? "light" : "dark")
   }
 
   const handleLanguageChange = (lang: Language) => {
@@ -205,21 +216,11 @@ export function Navbar() {
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              className="relative w-9 h-9 rounded-full hover:bg-muted transition-all duration-300"
+              disabled={!mounted || isThemeChanging}
+              className="w-9 h-9 rounded-full hover:bg-muted transition-colors duration-200 disabled:opacity-100"
               aria-label="Toggle theme"
             >
-              {mounted && (
-                <>
-                  <Sun className={cn(
-                    "h-5 w-5 transition-all duration-300",
-                    theme === "dark" ? "rotate-0 scale-100" : "rotate-90 scale-0"
-                  )} />
-                  <Moon className={cn(
-                    "absolute h-5 w-5 transition-all duration-300",
-                    theme === "dark" ? "rotate-90 scale-0" : "rotate-0 scale-100"
-                  )} />
-                </>
-              )}
+              {mounted && (currentTheme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />)}
             </Button>
 
             {/* Mobile Menu Button */}

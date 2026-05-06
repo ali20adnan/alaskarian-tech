@@ -29,6 +29,9 @@ import {
   Bookmark,
   ShoppingBag,
   Ban,
+  Languages,
+  ShieldCheck,
+  Headset,
 } from "lucide-react"
 import { cn } from "@/src/lib/utils"
 import { Button } from "@/src/components/ui/button"
@@ -42,6 +45,7 @@ import { CannedRepliesPopup } from "@/src/components/admin/POPUPS/CannedRepliesP
 interface AdminDashboardProps {
   onLogout: () => void
   isRTL: boolean
+  onToggleLanguage: () => void
 }
 
 type TabType = "overview" | "content" | "appearance" | "support" | "settings" | "logs" | "users" | "products" | "notifications"
@@ -104,7 +108,7 @@ type AdminUser = {
   avatar: string
 }
 
-export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
+export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>("overview")
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 1024)
   const { config, updateConfig, resetConfig } = useSiteConfig()
@@ -122,6 +126,7 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
     descriptionAr: "",
     descriptionEn: "",
     imageUrl: "",
+    imageUrls: [] as string[],
     videoUrl: ""
   })
 
@@ -171,10 +176,10 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
     role: "editor" as "admin" | "editor",
   })
   const [users, setUsers] = useState<AdminUser[]>([
-    { id: 1, name: "Admin User", email: "admin@alaskarian.tech", role: "admin", avatar: "https://i.pravatar.cc/100?img=31" },
-    { id: 2, name: "Sarah Smith", email: "sarah@example.com", role: "editor", avatar: "https://i.pravatar.cc/100?img=32" },
-    { id: 3, name: "محمد حسن", email: "m.hassan@example.com", role: "editor", avatar: "https://i.pravatar.cc/100?img=33" },
-    { id: 4, name: "Ali Ahmed", email: "ali.ahmed@example.com", role: "editor", avatar: "https://i.pravatar.cc/100?img=34" },
+    { id: 1, name: "Admin User", email: "admin@alaskarian.tech", role: "admin", avatar: "" },
+    { id: 2, name: "Sarah Smith", email: "sarah@example.com", role: "editor", avatar: "" },
+    { id: 3, name: "محمد حسن", email: "m.hassan@example.com", role: "editor", avatar: "" },
+    { id: 4, name: "Ali Ahmed", email: "ali.ahmed@example.com", role: "editor", avatar: "" },
   ])
 
   const cannedReplies = useMemo(
@@ -247,7 +252,7 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
       body: JSON.stringify(newProduct)
     })
     if (res.ok) {
-      setNewProduct({ nameAr: "", nameEn: "", price: 0, category: "", descriptionAr: "", descriptionEn: "", imageUrl: "", videoUrl: "" })
+      setNewProduct({ nameAr: "", nameEn: "", price: 0, category: "", descriptionAr: "", descriptionEn: "", imageUrl: "", imageUrls: [], videoUrl: "" })
       fetchProducts()
     }
   }
@@ -292,7 +297,7 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
       name: trimmedName,
       email: trimmedEmail,
       role: newUser.role,
-      avatar: `https://i.pravatar.cc/100?img=${(users.length % 70) + 1}`,
+      avatar: "",
     }
     setUsers((prev) => [createdUser, ...prev])
     setNewUser({ name: "", email: "", role: "editor" })
@@ -489,6 +494,14 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
           </div>
 
           <div className="flex items-center gap-4">
+            <Button
+              type="button"
+              onClick={onToggleLanguage}
+              className="h-9 gap-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-3 text-xs font-semibold text-white shadow-lg shadow-cyan-500/20 hover:from-cyan-700 hover:to-blue-700"
+            >
+              <Languages className="h-4 w-4" />
+              {isRTL ? "English" : "العربية"}
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -951,8 +964,12 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {users.map((user) => (
                        <div key={user.id} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border dark:border-slate-800 flex items-center gap-4 hover:shadow-lg transition-all">
-                          <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0">
-                             <img src={user.avatar} alt={user.name} />
+                          <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
+                             {user.role === "admin" ? (
+                               <ShieldCheck className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
+                             ) : (
+                               <Headset className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+                             )}
                           </div>
                           <div>
                              <h4 className="font-bold dark:text-white">{user.name}</h4>
@@ -990,7 +1007,10 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                     </p>
                   </div>
                   <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                    <Button variant="outline" className="w-full rounded-xl border-slate-200 dark:border-slate-800 sm:w-auto">
+                    <Button
+                      variant="outline"
+                      className="w-full rounded-xl border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white sm:w-auto"
+                    >
                         {isRTL ? "تحميل التقرير" : "Download Report"}
                     </Button>
                     <Button className="w-full rounded-xl bg-cyan-600 hover:bg-cyan-700 sm:w-auto">
@@ -1420,7 +1440,7 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                   onSave={editingProduct?.id ? handleUpdateProduct : handleCreateProduct}
                   onClose={() => {
                     setEditingProduct(null)
-                    setNewProduct({ nameAr: "", nameEn: "", price: 0, category: "", descriptionAr: "", descriptionEn: "", imageUrl: "", videoUrl: "" })
+                    setNewProduct({ nameAr: "", nameEn: "", price: 0, category: "", descriptionAr: "", descriptionEn: "", imageUrl: "", imageUrls: [], videoUrl: "" })
                   }}
                 />
 
@@ -1430,9 +1450,9 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                    ) : (
                       products.map((product) => (
                          <div key={product.id} className="group bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl transition-all relative">
-                            {product.imageUrl ? (
+                           {(product.imageUrls?.[0] || product.imageUrl) ? (
                                <div className="h-40 w-full overflow-hidden">
-                                  <img src={product.imageUrl} alt={product.nameEn} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                  <img src={product.imageUrls?.[0] || product.imageUrl} alt={product.nameEn} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                </div>
                             ) : (
                                <div className="h-40 w-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
@@ -1464,6 +1484,11 @@ export function AdminDashboard({ onLogout, isRTL }: AdminDashboardProps) {
                                   <div className="flex items-center gap-1 text-[10px] text-emerald-500 font-bold mt-2">
                                      <Monitor className="w-3 h-3" />
                                      {isRTL ? "يحتوي عرض فيديو" : "Has Video Demo"}
+                                  </div>
+                               )}
+                               {Array.isArray(product.imageUrls) && product.imageUrls.length > 1 && (
+                                  <div className="flex items-center gap-1 text-[10px] text-cyan-500 font-bold mt-2">
+                                     +{product.imageUrls.length - 1} {isRTL ? "صور إضافية" : "more images"}
                                   </div>
                                )}
                               </div>

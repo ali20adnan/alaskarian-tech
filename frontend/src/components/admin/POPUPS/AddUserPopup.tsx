@@ -87,7 +87,11 @@ export function AddUserPopup({ isOpen, isRTL, newUser, setNewUser, onClose, onSa
               >
                 {isRTL ? "حفظ المستخدم" : "Save User"}
               </Button>
-              <Button variant="outline" className="flex-1 transition-transform duration-150 active:scale-95" onClick={onClose}>
+              <Button
+                variant="outline"
+                className="flex-1 border-slate-200 text-slate-700 transition-transform duration-150 hover:bg-slate-100 hover:text-slate-900 active:scale-95 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
+                onClick={onClose}
+              >
                 {isRTL ? "إلغاء" : "Cancel"}
               </Button>
             </div>

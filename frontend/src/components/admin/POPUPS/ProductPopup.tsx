@@ -25,8 +25,15 @@ export function ProductPopup({
 }: ProductPopupProps) {
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
+  const currentDraft = editingProduct ?? newProduct
+  const currentImages: string[] =
+    Array.isArray(currentDraft.imageUrls) && currentDraft.imageUrls.length > 0
+      ? currentDraft.imageUrls
+      : currentDraft.imageUrl
+        ? [currentDraft.imageUrl]
+        : []
 
-  const updateDraft = (key: string, value: string | number) => {
+  const updateDraft = (key: string, value: string | number | string[]) => {
     if (editingProduct) {
       setEditingProduct({ ...editingProduct, [key]: value })
       return
@@ -48,10 +55,22 @@ export function ProductPopup({
         throw new Error("Upload failed")
       }
       const data = await res.json()
-      updateDraft(kind === "image" ? "imageUrl" : "videoUrl", data.url)
+      if (kind === "image") {
+        const nextImages = [...currentImages, data.url]
+        updateDraft("imageUrls", nextImages)
+        updateDraft("imageUrl", nextImages[0] || "")
+      } else {
+        updateDraft("videoUrl", data.url)
+      }
     } finally {
       setLoading(false)
     }
+  }
+
+  const removeImage = (index: number) => {
+    const nextImages = currentImages.filter((_, i) => i !== index)
+    updateDraft("imageUrls", nextImages)
+    updateDraft("imageUrl", nextImages[0] || "")
   }
 
   return (
@@ -118,7 +137,11 @@ export function ProductPopup({
                   type="text"
                   placeholder="https://..."
                   value={editingProduct ? editingProduct.imageUrl : newProduct.imageUrl}
-                  onChange={(e) => updateDraft("imageUrl", e.target.value)}
+                  onChange={(e) => {
+                    const nextUrl = e.target.value
+                    updateDraft("imageUrl", nextUrl)
+                    updateDraft("imageUrls", nextUrl ? [nextUrl] : [])
+                  }}
                   className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white"
                 />
                 <label className="block">
@@ -137,6 +160,27 @@ export function ProductPopup({
                   />
                 </label>
                 {isUploadingImage && <p className="text-xs text-cyan-600">{isRTL ? "جاري رفع الصورة..." : "Uploading image..."}</p>}
+                {currentImages.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-xs font-semibold text-slate-500">
+                      {isRTL ? "الصور المضافة" : "Added Images"}
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {currentImages.map((url: string, index: number) => (
+                        <div key={`${url}-${index}`} className="relative overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+                          <img src={url} alt={`product-${index + 1}`} className="h-20 w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute right-1 top-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white"
+                          >
+                            {isRTL ? "حذف" : "Remove"}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-500 uppercase">Video URL</label>
@@ -187,7 +231,11 @@ export function ProductPopup({
               <Button className="flex-1 bg-cyan-600 transition-transform duration-150 active:scale-95" onClick={onSave}>
                 {isRTL ? "حفظ" : "Save"}
               </Button>
-              <Button variant="outline" className="flex-1 transition-transform duration-150 active:scale-95" onClick={onClose}>
+              <Button
+                variant="outline"
+                className="flex-1 border-slate-200 text-slate-700 transition-transform duration-150 hover:bg-slate-100 hover:text-slate-900 active:scale-95 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white"
+                onClick={onClose}
+              >
                 {isRTL ? "إلغاء" : "Cancel"}
               </Button>
             </div>
