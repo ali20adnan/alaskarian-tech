@@ -20,5 +20,17 @@
     "descriptionEn": "Mobile app for tracking reps and sales",
     "imageUrl": "https://images.unsplash.com/photo-1512428559083-a4979b2b51ff?q=80&w=500",
     "videoUrl": ""
+  },
+  {
+    "nameEn": "AI Support System",
+    "nameAr": "نظام الدعم الذكي",
+    "price": 750000,
+    "category": "Sales",
+    "icon": "Stethoscope",
+    "descriptionEn": "AI-powered support for your customers.",
+    "descriptionAr": "دعم مدعوم بالذكاء الاصطناعي لزبائنك.",
+    "imageUrl": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=500",
+    "id": "1778149958932",
+    "iconName": "Smartphone"
   }
 ]

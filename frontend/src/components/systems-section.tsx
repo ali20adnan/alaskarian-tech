@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { useLanguage } from "@/src/contexts/language-context"
 import { useSiteConfig } from "@/src/contexts/site-config-context"
 import { cn } from "@/src/lib/utils"
-import { ChevronLeft, ChevronRight, Monitor, ImageOff, Pill, ShoppingCart, Landmark, Stethoscope, Factory, GraduationCap, LayoutGrid, TrendingUp, Smartphone, Settings, SlidersHorizontal } from "lucide-react"
+import { ChevronLeft, ChevronRight, Monitor, ImageOff, Pill, ShoppingCart, Landmark, Stethoscope, Factory, GraduationCap, LayoutGrid, TrendingUp, Smartphone, Settings, SlidersHorizontal, Box } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { ProductModal, type Product } from "./product-modal"
 
@@ -177,13 +177,24 @@ const translations = {
   },
 }
 
-const systemIcons: Record<number, typeof Monitor> = {
-  1: Pill,
-  2: ShoppingCart,
-  3: Landmark,
-  4: Stethoscope,
-  5: Factory,
-  6: GraduationCap,
+const systemIcons: Record<string, typeof Monitor> = {
+  "1": Pill,
+  "2": ShoppingCart,
+  "3": Landmark,
+  "4": Stethoscope,
+  "5": Factory,
+  "6": GraduationCap,
+  "Monitor": Monitor,
+  "Pill": Pill,
+  "ShoppingCart": ShoppingCart,
+  "Landmark": Landmark,
+  "Stethoscope": Stethoscope,
+  "Factory": Factory,
+  "GraduationCap": GraduationCap,
+  "Box": Box,
+  "Smartphone": Smartphone,
+  "TrendingUp": TrendingUp,
+  "Settings": Settings,
 }
 
 function resolveCategoryLabel(
@@ -232,16 +243,18 @@ export function SystemsSection() {
     fetch("/api/products")
       .then(res => res.json())
       .then(data => {
-        const formatted = data.map((p: any) => ({
+        const validData = Array.isArray(data) ? data.filter((p: any) => p.nameAr || p.nameEn) : []
+        const formatted = validData.map((p: any) => ({
           id: `db-${p.id}`,
-          category: p.category?.toLowerCase() || "sales",
-          title: isRTL ? p.nameAr : p.nameEn,
-          description: isRTL ? p.descriptionAr : p.descriptionEn,
-          price: p.price.toLocaleString(),
+          category: p.category?.toLowerCase() || "other",
+          title: isRTL ? (p.nameAr || p.nameEn) : (p.nameEn || p.nameAr),
+          description: isRTL ? (p.descriptionAr || p.descriptionEn) : (p.descriptionEn || p.descriptionAr),
+          price: (p.price || 0).toLocaleString(),
           color: "from-blue-400 to-blue-500",
           barColor: "bg-gradient-to-r from-blue-400 to-cyan-400",
-          imageUrl: p.imageUrl,
-          videoUrl: p.videoUrl
+          imageUrl: p.imageUrls?.[0] || p.imageUrl,
+          videoUrl: p.videoUrl,
+          iconName: p.iconName || p.icon
         }))
         setDbProducts(formatted)
       })
@@ -361,7 +374,7 @@ export function SystemsSection() {
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
               >
                 {filteredSystems.map((system) => {
-                  const IconComponent = systemIcons[system.id] || Monitor
+                  const IconComponent = systemIcons[String(system.id)] || systemIcons[system.iconName] || Monitor
                   return (
                     <div
                       key={system.id}

@@ -41,6 +41,12 @@ import {
   Smartphone,
   LayoutGrid,
   Mail,
+  Pill,
+  ShoppingCart,
+  Landmark,
+  Stethoscope,
+  Factory,
+  GraduationCap,
 } from "lucide-react"
 import { cn } from "@/src/lib/utils"
 import { Button } from "@/src/components/ui/button"
@@ -139,6 +145,24 @@ function AdminProductImage({ src, alt }: { src?: string; alt: string }) {
   )
 }
 
+function AdminProductIcon({ name, className }: { name?: string; className?: string }) {
+  const icons: Record<string, any> = {
+    Pill, 
+    ShoppingCart, 
+    Landmark, 
+    Stethoscope, 
+    Factory, 
+    GraduationCap, 
+    Monitor, 
+    Smartphone, 
+    TrendingUp, 
+    Settings, 
+    Box
+  }
+  const Icon = (name && icons[name]) ? icons[name] : Box
+  return <Icon className={className} />
+}
+
 export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>("overview")
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 1024)
@@ -172,7 +196,8 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
     descriptionEn: "",
     imageUrl: "",
     imageUrls: [] as string[],
-    videoUrl: ""
+    videoUrl: "",
+    iconName: "Box"
   })
 
   const [supportMessages, setSupportMessages] = useState<SupportMsg[]>([
@@ -297,7 +322,7 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
       body: JSON.stringify(newProduct)
     })
     if (res.ok) {
-      setNewProduct({ nameAr: "", nameEn: "", price: 0, category: "", descriptionAr: "", descriptionEn: "", imageUrl: "", imageUrls: [], videoUrl: "" })
+      setNewProduct({ nameAr: "", nameEn: "", price: 0, category: "", descriptionAr: "", descriptionEn: "", imageUrl: "", imageUrls: [], videoUrl: "", iconName: "Box" })
       fetchProducts()
     }
   }
@@ -1773,7 +1798,7 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                   onSave={editingProduct?.id ? handleUpdateProduct : handleCreateProduct}
                   onClose={() => {
                     setEditingProduct(null)
-                    setNewProduct({ nameAr: "", nameEn: "", price: 0, category: "", descriptionAr: "", descriptionEn: "", imageUrl: "", imageUrls: [], videoUrl: "" })
+                    setNewProduct({ nameAr: "", nameEn: "", price: 0, category: "", descriptionAr: "", descriptionEn: "", imageUrl: "", imageUrls: [], videoUrl: "", iconName: "Box" })
                   }}
                 />
 
@@ -1781,7 +1806,7 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                    {isProductsLoading ? (
                       [1, 2, 3, 4, 5].map(i => <div key={i} className="h-40 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-2xl" />)
                    ) : (
-                      products.map((product) => (
+                      products.filter(p => p.nameAr || p.nameEn).map((product) => (
                          <div key={product.id} className="group bg-white dark:bg-slate-900 rounded-2xl border dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-lg transition-all relative">
                            <div className="h-32 w-full overflow-hidden">
                              <AdminProductImage src={product.imageUrls?.[0] || product.imageUrl} alt={product.nameEn} />
@@ -1790,7 +1815,7 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                              <div className="p-3.5 pb-2.5">
                               <div className="flex justify-between items-start mb-2">
                                <div className="p-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg">
-                                  <Box className="w-3.5 h-3.5" />
+                                  <AdminProductIcon name={product.iconName} className="w-3.5 h-3.5" />
                                </div>
                                <div className="flex gap-0.5">
                                   <Button variant="ghost" size="icon" className="h-6 w-6 text-cyan-500" onClick={() => setEditingProduct(product)}>

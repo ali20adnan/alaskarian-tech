@@ -1,6 +1,34 @@
 import { motion, AnimatePresence } from "motion/react"
 import { useState } from "react"
 import { Button } from "@/src/components/ui/button"
+import { 
+  Monitor, 
+  Pill, 
+  ShoppingCart, 
+  Landmark, 
+  Stethoscope, 
+  Factory, 
+  GraduationCap,
+  Box,
+  Smartphone,
+  TrendingUp,
+  Settings,
+  ChevronDown
+} from "lucide-react"
+
+const AVAILABLE_ICONS = [
+  { name: "Monitor", icon: Monitor },
+  { name: "Pill", icon: Pill },
+  { name: "ShoppingCart", icon: ShoppingCart },
+  { name: "Landmark", icon: Landmark },
+  { name: "Stethoscope", icon: Stethoscope },
+  { name: "Factory", icon: Factory },
+  { name: "GraduationCap", icon: GraduationCap },
+  { name: "Smartphone", icon: Smartphone },
+  { name: "TrendingUp", icon: TrendingUp },
+  { name: "Settings", icon: Settings },
+  { name: "Box", icon: Box },
+]
 
 interface ProductPopupProps {
   isOpen: boolean
@@ -25,6 +53,16 @@ export function ProductPopup({
 }: ProductPopupProps) {
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [isUploadingVideo, setIsUploadingVideo] = useState(false)
+
+  const handleSave = () => {
+    const draft = editingProduct || newProduct
+    if (!draft.nameAr?.trim() && !draft.nameEn?.trim()) {
+      alert(isRTL ? "يرجى إدخال اسم المنتج" : "Please enter product name")
+      return
+    }
+    onSave()
+  }
+
   const currentDraft = editingProduct ?? newProduct
   const currentImages: string[] =
     Array.isArray(currentDraft.imageUrls) && currentDraft.imageUrls.length > 0
@@ -113,7 +151,7 @@ export function ProductPopup({
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase">Price ($)</label>
+                <label className="text-xs font-bold text-slate-500 uppercase">{isRTL ? "السعر (د.ع)" : "Price (IQD)"}</label>
                 <input
                   type="number"
                   value={editingProduct ? editingProduct.price : newProduct.price}
@@ -129,6 +167,31 @@ export function ProductPopup({
                   onChange={(e) => updateDraft("category", e.target.value)}
                   className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase">{isRTL ? "الأيقونة" : "Icon"}</label>
+                <div className="grid grid-cols-6 gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700">
+                  {AVAILABLE_ICONS.map((item) => {
+                    const Icon = item.icon
+                    const isSelected = currentDraft.iconName === item.name
+                    return (
+                      <button
+                        key={item.name}
+                        type="button"
+                        onClick={() => updateDraft("iconName", item.name)}
+                        className={`p-2 rounded-lg flex items-center justify-center transition-all ${
+                          isSelected 
+                            ? "bg-cyan-600 text-white shadow-md shadow-cyan-500/20 scale-110" 
+                            : "text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                        }`}
+                        title={item.name}
+                      >
+                        <Icon className="w-5 h-5" />
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -228,7 +291,7 @@ export function ProductPopup({
               </div>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
-              <Button className="flex-1 bg-cyan-600 transition-transform duration-150 active:scale-95" onClick={onSave}>
+              <Button className="flex-1 bg-cyan-600 transition-transform duration-150 active:scale-95" onClick={handleSave}>
                 {isRTL ? "حفظ" : "Save"}
               </Button>
               <Button
