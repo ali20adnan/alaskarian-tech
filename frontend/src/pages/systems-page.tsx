@@ -207,7 +207,7 @@ export function SystemsPage() {
             {t.noResults}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
             {catalogProducts.map((system) => (
               <button
                 key={`catalog-${system.id}`}
@@ -220,16 +220,20 @@ export function SystemsPage() {
                 }}
                 className="overflow-hidden rounded-2xl border bg-white text-start shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900"
               >
-                <div className="aspect-[16/10] bg-slate-100 dark:bg-slate-800">
+                <div className="h-40 w-full bg-slate-100 dark:bg-slate-800">
                   <CatalogImage src={system.imageUrl} alt={system.title} />
                 </div>
                 <div className="p-4">
-                  <p className={cn("mb-1 text-xs text-cyan-600", isRTL && "font-cairo")}>{resolveCategoryLabel(system.category, t.filters)}</p>
-                  <h4 className={cn("line-clamp-1 font-bold dark:text-white", isRTL && "font-cairo")}>{system.title}</h4>
-                  <p className={cn("mt-1 line-clamp-2 text-xs text-muted-foreground", isRTL && "font-cairo")}>{system.description}</p>
-                  <p className={cn("mt-3 text-sm font-bold text-cyan-600 dark:text-cyan-400", isRTL && "font-cairo")}>
-                    {system.price} {t.currency}
-                  </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className={cn("text-[10px] uppercase font-bold text-slate-500 tracking-tighter bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md truncate", isRTL && "font-cairo")}>
+                      {resolveCategoryLabel(system.category, t.filters)}
+                    </span>
+                    <p className={cn("text-sm font-bold text-cyan-600 dark:text-cyan-400", isRTL && "font-cairo")}>
+                      {system.price} {t.currency}
+                    </p>
+                  </div>
+                  <h4 className={cn("line-clamp-1 text-base font-bold dark:text-white", isRTL && "font-cairo")}>{system.title}</h4>
+                  <p className={cn("mt-2 line-clamp-2 text-xs text-muted-foreground leading-relaxed", isRTL && "font-cairo")}>{system.description}</p>
                 </div>
               </button>
             ))}

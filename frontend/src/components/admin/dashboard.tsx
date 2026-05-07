@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react"
 import { Link } from "react-router-dom"
 import { motion, AnimatePresence } from "motion/react"
+import { useTheme } from "next-themes"
 import { 
   Users, 
   MessageSquare, 
@@ -32,6 +33,14 @@ import {
   Languages,
   ShieldCheck,
   Headset,
+  Sun,
+  Moon,
+  ImageOff,
+  Shield,
+  Zap,
+  Smartphone,
+  LayoutGrid,
+  Mail,
 } from "lucide-react"
 import { cn } from "@/src/lib/utils"
 import { Button } from "@/src/components/ui/button"
@@ -108,9 +117,45 @@ type AdminUser = {
   avatar: string
 }
 
+function AdminProductImage({ src, alt }: { src?: string; alt: string }) {
+  const [failed, setFailed] = useState(false)
+
+  if (!src || failed) {
+    return (
+      <div className="h-32 w-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+        <ImageOff className="w-8 h-8 text-slate-300" />
+      </div>
+    )
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setFailed(true)}
+      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+      loading="lazy"
+    />
+  )
+}
+
 export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>("overview")
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 1024)
+  const { theme, resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const currentTheme = mounted ? (theme === "system" ? resolvedTheme : theme) : undefined
+
+  const toggleTheme = () => {
+    if (!currentTheme) return
+    setTheme(currentTheme === "dark" ? "light" : "dark")
+  }
+
   const { config, updateConfig, resetConfig } = useSiteConfig()
   const [localConfig, setLocalConfig] = useState(config)
   const [isSaving, setIsSaving] = useState(false)
@@ -319,7 +364,7 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
 
   return (
     <div className={cn(
-      "min-h-screen bg-slate-50 dark:bg-[#06080a] flex",
+      "h-screen bg-slate-50 dark:bg-[#06080a] flex overflow-hidden",
       isRTL && "font-cairo"
     )} dir={isRTL ? "rtl" : "ltr"}>
       
@@ -437,38 +482,83 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
           </nav>
 
           {/* User Profile & Logout - Fixed at bottom */}
-          <div className="mt-auto p-4 border-t dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="mt-auto p-3 border-t dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
             <div className={cn(
-              "flex items-center gap-3 p-3 rounded-2xl bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-sm mb-3 transition-all",
-              !isSidebarOpen && "justify-center p-2 opacity-0 lg:opacity-100"
+              "flex items-center gap-3 p-2 rounded-2xl bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-sm mb-2 transition-all",
+              !isSidebarOpen && "justify-center opacity-0 lg:opacity-100"
             )}>
-              <div className="w-10 h-10 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center shrink-0 border-2 border-white dark:border-slate-700">
-                <Users className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+              <div className="w-8 h-8 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center shrink-0 border-2 border-white dark:border-slate-700">
+                <Users className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
               </div>
               {isSidebarOpen && (
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold dark:text-white truncate">Admin Account</p>
-                  <p className="text-[10px] text-muted-foreground truncate uppercase font-semibold">Super Admin</p>
-                </div>
+                <>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold dark:text-white truncate">Admin Account</p>
+                    <p className="text-[10px] text-muted-foreground truncate uppercase font-semibold">Super Admin</p>
+                  </div>
+                  <button 
+                    onClick={() => setActiveTab("notifications")}
+                    className={cn(
+                      "relative p-2 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl transition-all",
+                      isRTL ? "mr-auto" : "ml-auto"
+                    )}
+                    title={isRTL ? "الإشعارات" : "Notifications"}
+                  >
+                    <Bell className="w-4 h-4" />
+                    {unreadNotificationsCount > 0 && (
+                      <span className="absolute top-1 right-1.5 w-2 h-2 rounded-full bg-red-500 border-2 border-white dark:border-slate-800" />
+                    )}
+                  </button>
+                </>
               )}
             </div>
-            <Button 
-              variant="ghost" 
-              onClick={onLogout}
-              className={cn(
-                "w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl px-4 py-8 transition-all h-auto",
-                !isSidebarOpen && "justify-center px-2"
-              )}
-            >
-              <LogOut className="w-5 h-5" />
-              {isSidebarOpen && <span className={cn("ml-3 font-bold", isRTL && "mr-3 ml-0")}>{isRTL ? "تسجيل الخروج" : "Logout"}</span>}
-            </Button>
+            <div className="flex flex-col gap-2">
+              <div className={cn("flex gap-2", !isSidebarOpen && "flex-col")}>
+                <Button
+                  type="button"
+                  onClick={onToggleLanguage}
+                  variant="ghost"
+                  className={cn(
+                    "flex-1 justify-start text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl px-4 py-2.5 transition-all h-auto",
+                    !isSidebarOpen && "justify-center px-2"
+                  )}
+                  title={isRTL ? "تغيير اللغة" : "Change Language"}
+                >
+                  <Languages className="w-4 h-4 shrink-0" />
+                  {isSidebarOpen && <span className={cn("ml-3 font-bold text-sm truncate", isRTL && "mr-3 ml-0")}>{isRTL ? "English" : "العربية"}</span>}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={toggleTheme}
+                  variant="ghost"
+                  className={cn(
+                    "flex-1 justify-start text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl px-4 py-2.5 transition-all h-auto",
+                    !isSidebarOpen && "justify-center px-2"
+                  )}
+                  title={isRTL ? "تبديل المظهر" : "Toggle Theme"}
+                >
+                  {currentTheme === "dark" ? <Sun className="w-4 h-4 shrink-0" /> : <Moon className="w-4 h-4 shrink-0" />}
+                  {isSidebarOpen && <span className={cn("ml-3 font-bold text-sm truncate", isRTL && "mr-3 ml-0")}>{isRTL ? (currentTheme === "dark" ? "فاتح" : "داكن") : (currentTheme === "dark" ? "Light" : "Dark")}</span>}
+                </Button>
+              </div>
+              <Button 
+                variant="ghost" 
+                onClick={onLogout}
+                className={cn(
+                  "w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl px-4 py-2.5 transition-all h-auto",
+                  !isSidebarOpen && "justify-center px-2"
+                )}
+              >
+                <LogOut className="w-4 h-4" />
+                {isSidebarOpen && <span className={cn("ml-3 font-bold text-sm", isRTL && "mr-3 ml-0")}>{isRTL ? "تسجيل الخروج" : "Logout"}</span>}
+              </Button>
+            </div>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-[#06080a]">
         {/* Topbar */}
         <header className="h-20 bg-white dark:bg-slate-900 border-b dark:border-slate-800 px-4 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-30">
           <div className="flex items-center gap-4">
@@ -493,44 +583,7 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Button
-              type="button"
-              onClick={onToggleLanguage}
-              className="h-9 gap-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-3 text-xs font-semibold text-white shadow-lg shadow-cyan-500/20 hover:from-cyan-700 hover:to-blue-700"
-            >
-              <Languages className="h-4 w-4" />
-              {isRTL ? "English" : "العربية"}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative"
-              type="button"
-              aria-label={isRTL ? "الإشعارات" : "Notifications"}
-              onClick={() => setActiveTab("notifications")}
-            >
-              <Bell className="w-5 h-5" />
-              {unreadNotificationsCount > 0 && (
-                <span
-                  className={cn(
-                    "absolute -top-0.5 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold grid place-items-center border-2 border-white dark:border-slate-900",
-                    isRTL ? "-left-1" : "-right-1",
-                  )}
-                >
-                  {Math.min(unreadNotificationsCount, 9)}
-                </span>
-              )}
-            </Button>
-            <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 mx-2" />
-            <div className="flex items-center gap-3">
-               <div className="flex flex-col items-end hidden lg:flex">
-                  <span className="text-sm font-semibold dark:text-white">Admin User</span>
-                  <span className="text-[10px] uppercase font-bold text-cyan-500 tracking-wider">Super Admin</span>
-               </div>
-               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20" />
-            </div>
-          </div>
+
         </header>
 
         {/* Dashboard Content */}
@@ -635,7 +688,7 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                        <RotateCcw className="w-4 h-4" />
                        {isRTL ? "إعادة ضبط" : "Reset"}
                     </Button>
-                    <Button onClick={handleSave} disabled={isSaving} className="w-full gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 sm:w-auto">
+                    <Button onClick={handleSave} disabled={isSaving} className="w-full gap-2 bg-cyan-600 hover:bg-cyan-700 sm:w-auto transition-transform duration-150 active:scale-95">
                        <Save className={cn("w-4 h-4", isSaving && "animate-spin")} />
                        {isSaving ? (isRTL ? "جاري الحفظ..." : "Saving...") : (isRTL ? "حفظ التغييرات" : "Save Changes")}
                     </Button>
@@ -654,7 +707,7 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                     
                     <div className="space-y-4">
                        <div className="space-y-2">
-                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Title (English)</label>
+                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "العنوان (إنجليزي)" : "Title (English)"}</label>
                           <input 
                             type="text" 
                             value={localConfig.hero.titleEn}
@@ -663,7 +716,7 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                           />
                        </div>
                        <div className="space-y-2">
-                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Title (Arabic)</label>
+                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "العنوان (عربي)" : "Title (Arabic)"}</label>
                           <input 
                             type="text" 
                             dir="rtl"
@@ -672,9 +725,17 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                             className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-cyan-500/20 outline-none dark:text-white font-cairo"
                           />
                        </div>
+                       <div className="space-y-2">
+                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "العنوان الفرعي (إنجليزي)" : "Subtitle (EN)"}</label>
+                          <textarea value={localConfig.hero.subtitleEn} onChange={(e) => setLocalConfig({...localConfig, hero: {...localConfig.hero, subtitleEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white h-20" />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "العنوان الفرعي (عربي)" : "Subtitle (AR)"}</label>
+                          <textarea dir="rtl" value={localConfig.hero.subtitleAr} onChange={(e) => setLocalConfig({...localConfig, hero: {...localConfig.hero, subtitleAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo h-20" />
+                       </div>
                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                           <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Primary Button (EN)</label>
+                            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "الزر الرئيسي (إنجليزي)" : "Primary Button (EN)"}</label>
                             <input 
                               type="text" 
                               value={localConfig.hero.primaryButtonEn}
@@ -683,7 +744,7 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Primary Button (AR)</label>
+                            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "الزر الرئيسي (عربي)" : "Primary Button (AR)"}</label>
                             <input 
                               type="text" 
                               dir="rtl"
@@ -691,6 +752,144 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                               onChange={(e) => setLocalConfig({...localConfig, hero: {...localConfig.hero, primaryButtonAr: e.target.value}})}
                               className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border-slate-200 dark:border-slate-700 dark:text-white font-cairo"
                             />
+                          </div>
+                       </div>
+                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "الزر الثانوي (إنجليزي)" : "Secondary Button (EN)"}</label>
+                             <input type="text" value={localConfig.hero.secondaryButtonEn} onChange={(e) => setLocalConfig({...localConfig, hero: {...localConfig.hero, secondaryButtonEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "الزر الثانوي (عربي)" : "Secondary Button (AR)"}</label>
+                             <input type="text" dir="rtl" value={localConfig.hero.secondaryButtonAr} onChange={(e) => setLocalConfig({...localConfig, hero: {...localConfig.hero, secondaryButtonAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+
+                  {/* Navbar Control */}
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800 p-8 space-y-6">
+                    <div className="flex items-center gap-3 mb-2">
+                       <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-600 flex items-center justify-center">
+                          <LayoutGrid className="w-4 h-4" />
+                       </div>
+                       <h3 className="text-xl font-bold dark:text-white">{isRTL ? "شريط التنقل (Navbar)" : "Navbar Settings"}</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-6">
+                       <div className="space-y-4">
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold text-slate-500 uppercase">{isRTL ? "رمز الشعار (EN)" : "Logo Initial (EN)"}</label>
+                             <input type="text" maxLength={1} value={localConfig.navbar.logoInitialEn} onChange={(e) => setLocalConfig({...localConfig, navbar: {...localConfig.navbar, logoInitialEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold text-slate-500 uppercase">{isRTL ? "نص خدمة العملاء (EN)" : "Customer Service (EN)"}</label>
+                             <input type="text" value={localConfig.navbar.customerServiceEn} onChange={(e) => setLocalConfig({...localConfig, navbar: {...localConfig.navbar, customerServiceEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                          </div>
+                       </div>
+                       <div className="space-y-4">
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold text-slate-500 uppercase">{isRTL ? "رمز الشعار (AR)" : "Logo Initial (AR)"}</label>
+                             <input type="text" maxLength={1} dir="rtl" value={localConfig.navbar.logoInitialAr} onChange={(e) => setLocalConfig({...localConfig, navbar: {...localConfig.navbar, logoInitialAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold text-slate-500 uppercase">{isRTL ? "نص خدمة العملاء (AR)" : "Customer Service (AR)"}</label>
+                             <input type="text" dir="rtl" value={localConfig.navbar.customerServiceAr} onChange={(e) => setLocalConfig({...localConfig, navbar: {...localConfig.navbar, customerServiceAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+
+                  {/* Systems Section Control */}
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800 p-8 space-y-6">
+                    <div className="flex items-center gap-3 mb-2">
+                       <div className="w-8 h-8 rounded-lg bg-violet-500/10 text-violet-600 flex items-center justify-center">
+                          <Monitor className="w-4 h-4" />
+                       </div>
+                       <h3 className="text-xl font-bold dark:text-white">{isRTL ? "قسم الأنظمة" : "Systems Section"}</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-6">
+                       <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase">Label (EN)</label>
+                                <input type="text" value={localConfig.systems.sectionLabelEn} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, sectionLabelEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                             </div>
+                             <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase">Title (EN)</label>
+                                <input type="text" value={localConfig.systems.titleEn} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, titleEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                             </div>
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold text-slate-500 uppercase">Subtitle (EN)</label>
+                             <textarea value={localConfig.systems.subtitleEn} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, subtitleEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white h-20" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase">CTA (EN)</label>
+                                <input type="text" value={localConfig.systems.ctaEn} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, ctaEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                             </div>
+                             <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase">View All (EN)</label>
+                                <input type="text" value={localConfig.systems.viewAllEn} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, viewAllEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                             </div>
+                          </div>
+                       </div>
+                       <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase font-cairo">العنوان الجانبي (AR)</label>
+                                <input type="text" dir="rtl" value={localConfig.systems.sectionLabelAr} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, sectionLabelAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
+                             </div>
+                             <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase font-cairo">العنوان (AR)</label>
+                                <input type="text" dir="rtl" value={localConfig.systems.titleAr} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, titleAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
+                             </div>
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold text-slate-500 uppercase font-cairo">الوصف (AR)</label>
+                             <textarea dir="rtl" value={localConfig.systems.subtitleAr} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, subtitleAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo h-20" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase font-cairo">نص الزر (AR)</label>
+                                <input type="text" dir="rtl" value={localConfig.systems.ctaAr} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, ctaAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
+                             </div>
+                             <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase font-cairo">عرض الكل (AR)</label>
+                                <input type="text" dir="rtl" value={localConfig.systems.viewAllAr} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, viewAllAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+
+                  {/* Footer Control */}
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800 p-8 space-y-6">
+                    <div className="flex items-center gap-3 mb-2">
+                       <div className="w-8 h-8 rounded-lg bg-slate-500/10 text-slate-600 flex items-center justify-center">
+                          <Mail className="w-4 h-4" />
+                       </div>
+                       <h3 className="text-xl font-bold dark:text-white">{isRTL ? "تذييل الصفحة (Footer)" : "Footer Settings"}</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-6">
+                       <div className="space-y-4">
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold text-slate-500 uppercase">Description (EN)</label>
+                             <textarea value={localConfig.footer.descriptionEn} onChange={(e) => setLocalConfig({...localConfig, footer: {...localConfig.footer, descriptionEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white h-20" />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold text-slate-500 uppercase">Copyright (EN)</label>
+                             <input type="text" value={localConfig.footer.copyrightEn} onChange={(e) => setLocalConfig({...localConfig, footer: {...localConfig.footer, copyrightEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                          </div>
+                       </div>
+                       <div className="space-y-4">
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold text-slate-500 uppercase font-cairo">الوصف التعريفي (AR)</label>
+                             <textarea dir="rtl" value={localConfig.footer.descriptionAr} onChange={(e) => setLocalConfig({...localConfig, footer: {...localConfig.footer, descriptionAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo h-20" />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold text-slate-500 uppercase font-cairo">حقوق النشر (AR)</label>
+                             <input type="text" dir="rtl" value={localConfig.footer.copyrightAr} onChange={(e) => setLocalConfig({...localConfig, footer: {...localConfig.footer, copyrightAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
                           </div>
                        </div>
                     </div>
@@ -719,7 +918,7 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                <input 
                                  type="text" 
-                                 placeholder="Value (e.g. 1500+)"
+                                 placeholder={isRTL ? "القيمة (مثال: 1500+)" : "Value (e.g. 1500+)"}
                                  value={stat.value}
                                  onChange={(e) => {
                                    const newStats = [...localConfig.stats];
@@ -731,7 +930,7 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                                <div className="flex flex-col gap-2">
                                   <input 
                                     type="text" 
-                                    placeholder="Label (EN)"
+                                    placeholder={isRTL ? "الوصف (إنجليزي)" : "Label (EN)"}
                                     value={stat.labelEn}
                                     onChange={(e) => {
                                       const newStats = [...localConfig.stats];
@@ -742,7 +941,7 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                                   />
                                   <input 
                                     type="text" 
-                                    placeholder="Label (AR)"
+                                    placeholder={isRTL ? "الوصف (عربي)" : "Label (AR)"}
                                     dir="rtl"
                                     value={stat.labelAr}
                                     onChange={(e) => {
@@ -764,6 +963,140 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                        </Button>
                     </div>
                   </div>
+
+                  {/* Features Section Control */}
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800 p-8 space-y-6 lg:col-span-2">
+                    <div className="flex items-center gap-3 mb-2">
+                       <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center">
+                          <Shield className="w-4 h-4" />
+                       </div>
+                       <h3 className="text-xl font-bold dark:text-white">{isRTL ? "مميزات المنصة" : "Platform Features"}</h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div className="space-y-4">
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "العنوان (إنجليزي)" : "Title (EN)"}</label>
+                             <input type="text" value={localConfig.features.titleEn} onChange={(e) => setLocalConfig({...localConfig, features: {...localConfig.features, titleEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "التمييز (إنجليزي)" : "Highlight (EN)"}</label>
+                             <input type="text" value={localConfig.features.titleHighlightEn} onChange={(e) => setLocalConfig({...localConfig, features: {...localConfig.features, titleHighlightEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "الوصف الفرعي (إنجليزي)" : "Subtitle (EN)"}</label>
+                             <textarea value={localConfig.features.subtitleEn} onChange={(e) => setLocalConfig({...localConfig, features: {...localConfig.features, subtitleEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white h-24" />
+                          </div>
+                       </div>
+                       <div className="space-y-4">
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "العنوان (عربي)" : "Title (AR)"}</label>
+                             <input type="text" dir="rtl" value={localConfig.features.titleAr} onChange={(e) => setLocalConfig({...localConfig, features: {...localConfig.features, titleAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "التمييز (عربي)" : "Highlight (AR)"}</label>
+                             <input type="text" dir="rtl" value={localConfig.features.titleHighlightAr} onChange={(e) => setLocalConfig({...localConfig, features: {...localConfig.features, titleHighlightAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "الوصف الفرعي (عربي)" : "Subtitle (AR)"}</label>
+                             <textarea dir="rtl" value={localConfig.features.subtitleAr} onChange={(e) => setLocalConfig({...localConfig, features: {...localConfig.features, subtitleAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo h-24" />
+                          </div>
+                       </div>
+                    </div>
+
+                    <div className="h-px bg-slate-100 dark:bg-slate-800" />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                       {localConfig.features.items.map((item, i) => (
+                         <div key={i} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border dark:border-slate-700 space-y-3 relative group/item">
+                            <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity" onClick={() => {
+                               const newItems = [...localConfig.features.items];
+                               newItems.splice(i, 1);
+                               setLocalConfig({...localConfig, features: {...localConfig.features, items: newItems}});
+                            }}><Trash2 className="w-3 h-3" /></Button>
+                            <div className="space-y-1">
+                               <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{isRTL ? "اسم الأيقونة" : "Icon Name"}</label>
+                               <input type="text" value={item.iconName} onChange={(e) => {
+                                  const newItems = [...localConfig.features.items];
+                                  newItems[i].iconName = e.target.value;
+                                  setLocalConfig({...localConfig, features: {...localConfig.features, items: newItems}});
+                               }} className="w-full p-2 bg-white dark:bg-slate-900 rounded-lg text-xs" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                               <input placeholder={isRTL ? "العنوان (EN)" : "Title EN"} value={item.titleEn} onChange={(e) => {
+                                  const newItems = [...localConfig.features.items];
+                                  newItems[i].titleEn = e.target.value;
+                                  setLocalConfig({...localConfig, features: {...localConfig.features, items: newItems}});
+                               }} className="p-2 bg-white dark:bg-slate-900 rounded-lg text-xs" />
+                               <input placeholder={isRTL ? "العنوان (AR)" : "Title AR"} dir="rtl" value={item.titleAr} onChange={(e) => {
+                                  const newItems = [...localConfig.features.items];
+                                  newItems[i].titleAr = e.target.value;
+                                  setLocalConfig({...localConfig, features: {...localConfig.features, items: newItems}});
+                               }} className="p-2 bg-white dark:bg-slate-900 rounded-lg text-xs font-cairo" />
+                            </div>
+                            <textarea placeholder={isRTL ? "الوصف (EN)" : "Description EN"} value={item.descriptionEn} onChange={(e) => {
+                               const newItems = [...localConfig.features.items];
+                               newItems[i].descriptionEn = e.target.value;
+                               setLocalConfig({...localConfig, features: {...localConfig.features, items: newItems}});
+                            }} className="w-full p-2 bg-white dark:bg-slate-900 rounded-lg text-xs h-16" />
+                            <textarea placeholder={isRTL ? "الوصف (AR)" : "Description AR"} dir="rtl" value={item.descriptionAr} onChange={(e) => {
+                               const newItems = [...localConfig.features.items];
+                               newItems[i].descriptionAr = e.target.value;
+                               setLocalConfig({...localConfig, features: {...localConfig.features, items: newItems}});
+                            }} className="w-full p-2 bg-white dark:bg-slate-900 rounded-lg text-xs font-cairo h-16" />
+                         </div>
+                       ))}
+                       <Button variant="outline" className="rounded-2xl border-dashed h-full min-h-[150px] flex flex-col gap-2 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => {
+                          setLocalConfig({...localConfig, features: {...localConfig.features, items: [...localConfig.features.items, { iconName: "Shield", titleAr: "ميزة جديدة", titleEn: "New Feature", descriptionAr: "", descriptionEn: "" }]}});
+                       }}>
+                          <Plus className="w-5 h-5 text-slate-400" />
+                          <span className="text-sm font-bold text-slate-500">{isRTL ? "إضافة ميزة" : "Add Feature"}</span>
+                       </Button>
+                    </div>
+                  </div>
+
+                  {/* CTA Section Control */}
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800 p-8 space-y-6">
+                    <div className="flex items-center gap-3 mb-2">
+                       <div className="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-600 flex items-center justify-center">
+                          <Smartphone className="w-4 h-4" />
+                       </div>
+                       <h3 className="text-xl font-bold dark:text-white">{isRTL ? "قسم الطلب الخاص" : "Custom CTA"}</h3>
+                    </div>
+                    
+                    <div className="space-y-4">
+                       <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "العنوان (إنجليزي)" : "Title (EN)"}</label>
+                             <input type="text" value={localConfig.cta.titleEn} onChange={(e) => setLocalConfig({...localConfig, cta: {...localConfig.cta, titleEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "التمييز (إنجليزي)" : "Highlight (EN)"}</label>
+                             <input type="text" value={localConfig.cta.titleHighlightEn} onChange={(e) => setLocalConfig({...localConfig, cta: {...localConfig.cta, titleHighlightEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                          </div>
+                       </div>
+                       <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "العنوان (عربي)" : "Title (AR)"}</label>
+                             <input type="text" dir="rtl" value={localConfig.cta.titleAr} onChange={(e) => setLocalConfig({...localConfig, cta: {...localConfig.cta, titleAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "التمييز (عربي)" : "Highlight (AR)"}</label>
+                             <input type="text" dir="rtl" value={localConfig.cta.titleHighlightAr} onChange={(e) => setLocalConfig({...localConfig, cta: {...localConfig.cta, titleHighlightAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
+                          </div>
+                       </div>
+                       <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "الزر (إنجليزي)" : "Button (EN)"}</label>
+                             <input type="text" value={localConfig.cta.buttonEn} onChange={(e) => setLocalConfig({...localConfig, cta: {...localConfig.cta, buttonEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "الزر (عربي)" : "Button (AR)"}</label>
+                             <input type="text" dir="rtl" value={localConfig.cta.buttonAr} onChange={(e) => setLocalConfig({...localConfig, cta: {...localConfig.cta, buttonAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
+                          </div>
+                       </div>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -781,7 +1114,7 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                       <h2 className="text-3xl font-bold dark:text-white">{isRTL ? "تخصيص المظهر" : "Visual Identity Control"}</h2>
                       <p className="text-muted-foreground">{isRTL ? "تحكم في هوية الموقع البصرية وعناصر العرض" : "Master the site's visual identity and visibility"}</p>
                     </div>
-                    <Button onClick={handleSave} disabled={isSaving} className="w-full gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 sm:w-auto">
+                    <Button onClick={handleSave} disabled={isSaving} className="w-full gap-2 bg-cyan-600 hover:bg-cyan-700 sm:w-auto transition-transform duration-150 active:scale-95">
                        <Save className={cn("w-4 h-4", isSaving && "animate-spin")} />
                        {isRTL ? "حفظ الإعدادات" : "Save Appearance"}
                     </Button>
@@ -1424,7 +1757,7 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                     <h2 className="text-3xl font-bold dark:text-white">{isRTL ? "إدارة المنتجات" : "Products Management"}</h2>
                     <p className="text-muted-foreground">{isRTL ? "أضف وعدل المنتجات والخدمات التي تقدمها" : "Add and edit the products and services you offer"}</p>
                   </div>
-                  <Button onClick={() => setEditingProduct({ nameAr: "", nameEn: "", price: 0, category: "", descriptionAr: "", descriptionEn: "" })} className="w-full gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 sm:w-auto">
+                  <Button onClick={() => setEditingProduct({ nameAr: "", nameEn: "", price: 0, category: "", descriptionAr: "", descriptionEn: "" })} className="w-full gap-2 bg-cyan-600 hover:bg-cyan-700 sm:w-auto transition-transform duration-150 active:scale-95">
                     <Plus className="w-4 h-4" />
                     {isRTL ? "إضافة منتج" : "Add Product"}
                   </Button>
@@ -1444,55 +1777,49 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                   }}
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
                    {isProductsLoading ? (
-                      [1, 2, 3].map(i => <div key={i} className="h-48 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-3xl" />)
+                      [1, 2, 3, 4, 5].map(i => <div key={i} className="h-40 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-2xl" />)
                    ) : (
                       products.map((product) => (
-                         <div key={product.id} className="group bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl transition-all relative">
-                           {(product.imageUrls?.[0] || product.imageUrl) ? (
-                               <div className="h-40 w-full overflow-hidden">
-                                  <img src={product.imageUrls?.[0] || product.imageUrl} alt={product.nameEn} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                               </div>
-                            ) : (
-                               <div className="h-40 w-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                                  <Box className="w-12 h-12 text-slate-300" />
-                               </div>
-                            )}
+                         <div key={product.id} className="group bg-white dark:bg-slate-900 rounded-2xl border dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-lg transition-all relative">
+                           <div className="h-32 w-full overflow-hidden">
+                             <AdminProductImage src={product.imageUrls?.[0] || product.imageUrl} alt={product.nameEn} />
+                           </div>
 
-                            <div className="p-6">
-                              <div className="flex justify-between items-start mb-4">
-                               <div className="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-2xl">
-                                  <Box className="w-6 h-6" />
+                             <div className="p-3.5 pb-2.5">
+                              <div className="flex justify-between items-start mb-2">
+                               <div className="p-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-lg">
+                                  <Box className="w-3.5 h-3.5" />
                                </div>
-                               <div className="flex gap-1">
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-cyan-500" onClick={() => setEditingProduct(product)}>
-                                     <Eye className="w-4 h-4" />
+                               <div className="flex gap-0.5">
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-cyan-500" onClick={() => setEditingProduct(product)}>
+                                     <Eye className="w-3 h-3" />
                                   </Button>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => handleDeleteProduct(product.id)}>
-                                     <Trash2 className="w-4 h-4" />
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleDeleteProduct(product.id)}>
+                                     <Trash2 className="w-3 h-3" />
                                   </Button>
                                </div>
                               </div>
-                              <div className="space-y-1">
-                               <h4 className="font-bold text-lg dark:text-white uppercase">{isRTL ? product.nameAr : product.nameEn}</h4>
-                               <div className="flex items-center gap-4">
-                                  <p className="text-sm text-cyan-600 font-bold">${product.price}</p>
-                                  <span className="text-[10px] uppercase font-black text-slate-400 tracking-tighter bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">{product.category}</span>
+                              <div className="space-y-0.5">
+                               <h4 className="font-bold text-sm dark:text-white uppercase truncate">{isRTL ? product.nameAr : product.nameEn}</h4>
+                               <div className="flex items-center justify-between">
+                                  <p className="text-xs text-cyan-600 font-bold">${product.price}</p>
+                                  <span className="text-[8px] uppercase font-bold text-slate-500 tracking-tighter bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md truncate">{product.category}</span>
                                </div>
                                {product.videoUrl && (
-                                  <div className="flex items-center gap-1 text-[10px] text-emerald-500 font-bold mt-2">
-                                     <Monitor className="w-3 h-3" />
-                                     {isRTL ? "يحتوي عرض فيديو" : "Has Video Demo"}
+                                  <div className="flex items-center gap-1 text-[9px] text-emerald-500 font-medium mt-1">
+                                     <Monitor className="w-2.5 h-2.5" />
+                                     {isRTL ? "فيديو متاح" : "Video"}
                                   </div>
                                )}
                                {Array.isArray(product.imageUrls) && product.imageUrls.length > 1 && (
-                                  <div className="flex items-center gap-1 text-[10px] text-cyan-500 font-bold mt-2">
-                                     +{product.imageUrls.length - 1} {isRTL ? "صور إضافية" : "more images"}
+                                  <div className="flex items-center gap-1 text-[9px] text-cyan-500 font-medium mt-1">
+                                     +{product.imageUrls.length - 1} {isRTL ? "صور" : "images"}
                                   </div>
                                )}
                               </div>
-                              <p className="text-xs text-muted-foreground mt-4 line-clamp-2">
+                              <p className="text-[10px] text-muted-foreground mt-2 line-clamp-2 leading-tight">
                                {isRTL ? product.descriptionAr : product.descriptionEn}
                               </p>
                             </div>
@@ -1522,7 +1849,7 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                     <h2 className="text-3xl font-bold dark:text-white">{isRTL ? "إعدادات التواصل" : "Contact Settings"}</h2>
                     <p className="text-muted-foreground">{isRTL ? "تعديل رقم الاتصال وروابط المنصات بشكل مباشر" : "Manage phone, WhatsApp, email, website, and social links"}</p>
                   </div>
-                  <Button onClick={handleSave} disabled={isSaving} className="w-full gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 sm:w-auto">
+                  <Button onClick={handleSave} disabled={isSaving} className="w-full gap-2 bg-cyan-600 hover:bg-cyan-700 sm:w-auto transition-transform duration-150 active:scale-95">
                     <Save className={cn("h-4 w-4", isSaving && "animate-spin")} />
                     {isSaving ? (isRTL ? "جاري الحفظ..." : "Saving...") : (isRTL ? "حفظ الإعدادات" : "Save Settings")}
                   </Button>
@@ -1627,6 +1954,57 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                         className="w-full rounded-xl border bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                       />
                     </div>
+                  </div>
+                  
+                  <div className="h-px bg-slate-100 dark:bg-slate-800" />
+
+                  <div className="space-y-4">
+                     <h3 className="text-xl font-bold dark:text-white flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5 text-cyan-600" />
+                        {isRTL ? "إعدادات بوت التليكرام" : "Telegram Bot Settings"}
+                     </h3>
+                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                       <div className="space-y-2">
+                         <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "تفعيل الإشعارات" : "Enable Notifications"}</label>
+                         <div className="mt-1">
+                           <AdminToggle
+                             checked={localConfig.integrations?.telegram?.enabled || false}
+                             onCheckedChange={() =>
+                               setLocalConfig({
+                                 ...localConfig,
+                                 integrations: {
+                                   ...localConfig.integrations,
+                                   telegram: {
+                                     botToken: localConfig.integrations?.telegram?.botToken || "",
+                                     chatId: localConfig.integrations?.telegram?.chatId || "",
+                                     enabled: !(localConfig.integrations?.telegram?.enabled || false),
+                                   },
+                                 },
+                               })
+                             }
+                             activeClassName="bg-cyan-600"
+                           />
+                         </div>
+                       </div>
+                       <div className="space-y-2 sm:col-span-2">
+                         <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "التوكن الخاص بالبوت (Bot Token)" : "Bot Token"}</label>
+                         <input
+                           type="text"
+                           value={localConfig.integrations?.telegram?.botToken || ""}
+                           onChange={(e) => setLocalConfig({ ...localConfig, integrations: { ...localConfig.integrations, telegram: { botToken: e.target.value, chatId: localConfig.integrations?.telegram?.chatId || "", enabled: localConfig.integrations?.telegram?.enabled || false } } })}
+                           className="w-full rounded-xl border bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                         />
+                       </div>
+                       <div className="space-y-2 sm:col-span-2">
+                         <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{isRTL ? "معرف الدردشة (Chat ID)" : "Chat ID"}</label>
+                         <input
+                           type="text"
+                           value={localConfig.integrations?.telegram?.chatId || ""}
+                           onChange={(e) => setLocalConfig({ ...localConfig, integrations: { ...localConfig.integrations, telegram: { botToken: localConfig.integrations?.telegram?.botToken || "", chatId: e.target.value, enabled: localConfig.integrations?.telegram?.enabled || false } } })}
+                           className="w-full rounded-xl border bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                         />
+                       </div>
+                     </div>
                   </div>
                 </div>
               </motion.div>

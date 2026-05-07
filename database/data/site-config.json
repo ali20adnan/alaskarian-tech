@@ -1,17 +1,17 @@
 {
   "hero": {
-    "titleAr": "البداية نحو النجاح",
-    "titleEn": "The Path to Success",
-    "subtitleAr": "حلول تقنية متكاملة لخدمة شركتك",
-    "subtitleEn": "Integrated technical solutions to serve your company",
+    "titleAr": "وفر الوقت والمال وزد من مستوى مبيعاتك",
+    "titleEn": "Save Time and Money and Boost Your Sales",
+    "subtitleAr": "مع تطبيقات العسكريان لإدارة شركات التوزيع",
+    "subtitleEn": "With Alaskarian applications for distribution companies management",
     "primaryButtonAr": "ابدأ الآن",
-    "primaryButtonEn": "Start Now",
-    "secondaryButtonAr": "تواصل معنا",
-    "secondaryButtonEn": "Contact Us"
+    "primaryButtonEn": "Get Started",
+    "secondaryButtonAr": "تعرف علينا",
+    "secondaryButtonEn": "Learn More"
   },
   "stats": [
     {
-      "labelAr": "مستخدم نشط",
+      "labelAr": "عميل نشط",
       "labelEn": "Active Client",
       "value": "1500+"
     },
@@ -26,12 +26,125 @@
       "value": "24/7"
     }
   ],
+  "features": {
+    "titleAr": "لماذا تختار",
+    "titleHighlightAr": "العسكريان",
+    "titleEn": "Why Choose",
+    "titleHighlightEn": "Alaskarian",
+    "subtitleAr": "نقدم قيمة استثنائية من خلال التزامنا بالجودة والابتكار ونجاح العملاء",
+    "subtitleEn": "We provide exceptional value through our commitment to quality, innovation, and customer success",
+    "items": [
+      {
+        "iconName": "Shield",
+        "titleAr": "موثوق وآمن",
+        "titleEn": "Reliable & Secure",
+        "descriptionAr": "أمان على مستوى المؤسسات مع ضمان وقت تشغيل 99.9%",
+        "descriptionEn": "Enterprise-grade security with 99.9% uptime guarantee for your peace of mind"
+      },
+      {
+        "iconName": "Zap",
+        "titleAr": "سرعة فائقة",
+        "titleEn": "Lightning Fast",
+        "descriptionAr": "أداء محسن يضمن أوقات استجابة سريعة",
+        "descriptionEn": "Optimized performance ensuring quick response times across all our systems"
+      },
+      {
+        "iconName": "Clock",
+        "titleAr": "دعم 24/7",
+        "titleEn": "24/7 Support",
+        "descriptionAr": "فريق دعم فني على مدار الساعة",
+        "descriptionEn": "Round-the-clock technical support team ready to assist you anytime"
+      },
+      {
+        "iconName": "Headphones",
+        "titleAr": "تدريب متخصص",
+        "titleEn": "Expert Training",
+        "descriptionAr": "برامج تدريبية شاملة لفريقك",
+        "descriptionEn": "Comprehensive training programs to help your team master our systems"
+      },
+      {
+        "iconName": "Cloud",
+        "titleAr": "قائم على السحابة",
+        "titleEn": "Cloud-Based",
+        "descriptionAr": "الوصول إلى بياناتك من أي مكان",
+        "descriptionEn": "Access your data anywhere with our secure cloud infrastructure"
+      },
+      {
+        "iconName": "Lock",
+        "titleAr": "خصوصية البيانات",
+        "titleEn": "Data Privacy",
+        "descriptionAr": "بياناتك محمية بتشفير متقدم",
+        "descriptionEn": "Your data is protected with advanced encryption and strict privacy policies"
+      }
+    ]
+  },
+  "cta": {
+    "titleAr": "اصنع نظامك",
+    "titleEn": "Create Your Own",
+    "titleHighlightAr": "الخاص!",
+    "titleHighlightEn": "System!",
+    "buttonAr": "انضم الآن",
+    "buttonEn": "Join Now"
+  },
+  "navbar": {
+    "logoInitialAr": "ع",
+    "logoInitialEn": "A",
+    "logoTitleAr": "العسكريان للحلول البرمجية",
+    "logoTitleEn": "Alaskarian Tech",
+    "customerServiceAr": "خدمة العملاء",
+    "customerServiceEn": "Customer Service"
+  },
+  "footer": {
+    "companyNameAr": "العسكريان للحلول البرمجية",
+    "companyNameEn": "Alaskarian Tech",
+    "descriptionAr": "مزود رائد للحلول البرمجية متخصص في إدارة التوزيع.",
+    "descriptionEn": "Leading software solutions provider specializing in distribution management.",
+    "copyrightAr": "جميع الحقوق محفوظة.",
+    "copyrightEn": "All rights reserved.",
+    "madeWithAr": "صُنع بإتقان في العراق",
+    "madeWithEn": "Made with excellence in Iraq"
+  },
+  "systems": {
+    "sectionLabelAr": "قسم الأنظمة",
+    "sectionLabelEn": "Systems Section",
+    "titleAr": "أنظمة",
+    "titleEn": "Al-Askaryan",
+    "titleHighlightAr": "العسكريان",
+    "titleHighlightEn": "Systems",
+    "subtitleAr": "تنظم أعمالك مهما يكن نوع عملك",
+    "subtitleEn": "Organize your business no matter what type of work you do",
+    "ctaAr": "اصنع نظامك",
+    "ctaEn": "Build Your System",
+    "viewAllAr": "عرض الكل",
+    "viewAllEn": "View All"
+  },
   "appearance": {
     "primaryColor": "#0891b2",
-    "accentColor": "#f59e0b",
+    "accentColor": "#2563eb",
     "showSupportButton": true,
-    "showAnnouncement": true,
-    "announcementAr": "بدأ عرض الصيف! خصم 20% على جميع الأنظمة",
-    "announcementEn": "SUMMER OFFER STARTED! 20% OFF ON ALL SYSTEMS"
+    "announcementAr": "بدأ العرض الصيفي! خصم 20% على جميع الأنظمة",
+    "announcementEn": "Summer offer started! 20% off on all systems",
+    "showAnnouncement": true
+  },
+  "contact": {
+    "email": "info@alaskarian.com",
+    "phone": "5252",
+    "whatsapp": "9647700000000",
+    "addressAr": "العراق، سامراء",
+    "addressEn": "Samarra, Iraq",
+    "websiteUrl": "/location",
+    "socials": {
+      "facebook": "https://facebook.com",
+      "twitter": "https://x.com",
+      "instagram": "https://instagram.com",
+      "linkedin": "https://linkedin.com"
+    }
+  },
+  "integrations": {
+    "telegram": {
+      "botToken": "",
+      "chatId": "",
+      "enabled": false
+    }
   }
 }

@@ -26,9 +26,76 @@ export interface AppearanceBlock {
   announcementEn: string;
 }
 
+export interface FeatureItem {
+  iconName: string;
+  titleAr: string;
+  titleEn: string;
+  descriptionAr: string;
+  descriptionEn: string;
+}
+
+export interface FeaturesBlock {
+  titleAr: string;
+  titleHighlightAr: string;
+  titleEn: string;
+  titleHighlightEn: string;
+  subtitleAr: string;
+  subtitleEn: string;
+  items: FeatureItem[];
+}
+
+export interface CTABlock {
+  titleAr: string;
+  titleEn: string;
+  titleHighlightAr: string;
+  titleHighlightEn: string;
+  buttonAr: string;
+  buttonEn: string;
+}
+
+export interface NavbarBlock {
+  logoInitialAr: string;
+  logoInitialEn: string;
+  logoTitleAr: string;
+  logoTitleEn: string;
+  customerServiceAr: string;
+  customerServiceEn: string;
+}
+
+export interface FooterBlock {
+  companyNameAr: string;
+  companyNameEn: string;
+  descriptionAr: string;
+  descriptionEn: string;
+  copyrightAr: string;
+  copyrightEn: string;
+  madeWithAr: string;
+  madeWithEn: string;
+}
+
+export interface SystemsBlock {
+  sectionLabelAr: string;
+  sectionLabelEn: string;
+  titleAr: string;
+  titleEn: string;
+  titleHighlightAr: string;
+  titleHighlightEn: string;
+  subtitleAr: string;
+  subtitleEn: string;
+  ctaAr: string;
+  ctaEn: string;
+  viewAllAr: string;
+  viewAllEn: string;
+}
+
 export interface SiteConfig {
   hero: HeroBlock;
   stats: StatItem[];
+  features: FeaturesBlock;
+  cta: CTABlock;
+  navbar: NavbarBlock;
+  footer: FooterBlock;
+  systems: SystemsBlock;
   appearance: AppearanceBlock;
   contact: {
     email: string;
@@ -42,6 +109,13 @@ export interface SiteConfig {
       twitter: string;
       instagram: string;
       linkedin: string;
+    };
+  };
+  integrations?: {
+    telegram?: {
+      botToken: string;
+      chatId: string;
+      enabled: boolean;
     };
   };
 }

@@ -331,9 +331,13 @@ export function HeroSection() {
                         "flex items-center gap-2",
                         isRTL && "flex-row-reverse"
                       )}>
-                        <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600" />
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                          <span className="text-white font-bold text-[10px] sm:text-xs">
+                            {language === 'ar' ? config.navbar.logoInitialAr : config.navbar.logoInitialEn}
+                          </span>
+                        </div>
                         <span className={cn("text-[10px] sm:text-xs font-semibold text-slate-800", isRTL && "font-cairo")}>
-                          {isRTL ? "العسكريان" : "Al-Askaryan"}
+                          {language === 'ar' ? config.navbar.logoTitleAr : config.navbar.logoTitleEn}
                         </span>
                       </div>
                       <div className="flex gap-1">
@@ -401,7 +405,7 @@ export function HeroSection() {
                     <div className="text-center p-4">
                       <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
                         <span className={cn("text-white text-2xl font-bold", isRTL && "font-cairo")}>
-                          {isRTL ? "ع" : "A"}
+                          {language === 'ar' ? config.navbar.logoInitialAr : config.navbar.logoInitialEn}
                         </span>
                       </div>
                       <p className={cn("text-white/90 text-sm font-medium", isRTL && "font-cairo")}>

@@ -98,9 +98,14 @@ const translations = {
 }
 
 export function Footer() {
-  const { isRTL } = useLanguage()
+  const { isRTL, language } = useLanguage()
   const { config } = useSiteConfig()
   const t = isRTL ? translations.ar : translations.en
+  const companyName = language === "ar" ? config.footer.companyNameAr : config.footer.companyNameEn
+  const companyDescription = language === "ar" ? config.footer.descriptionAr : config.footer.descriptionEn
+  const logoInitial = language === "ar" ? config.navbar.logoInitialAr : config.navbar.logoInitialEn
+  const copyright = language === "ar" ? config.footer.copyrightAr : config.footer.copyrightEn
+  const madeWith = language === "ar" ? config.footer.madeWithAr : config.footer.madeWithEn
   const phoneText = config.contact.phone
   const whatsappLink = `https://wa.me/${(config.contact.whatsapp || config.contact.phone).replace(/[^\d]/g, "")}`
   const addressText = isRTL ? config.contact.addressAr : config.contact.addressEn
@@ -120,18 +125,18 @@ export function Footer() {
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
               <span className={cn("text-white font-bold text-lg", isRTL && "font-cairo")}>
-                {isRTL ? "ع" : "A"}
+                {logoInitial}
               </span>
             </div>
             <span className={cn("text-lg sm:text-xl font-bold", isRTL && "font-cairo")}>
-              {t.company.name}
+              {companyName}
             </span>
           </div>
           <p className={cn(
             "text-slate-400 mb-6 text-sm sm:text-base leading-relaxed",
             isRTL && "font-cairo"
           )}>
-            {t.company.description}
+            {companyDescription}
           </p>
           {/* Social Links */}
           <div className="flex gap-2 sm:gap-3">
@@ -155,18 +160,18 @@ export function Footer() {
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
                 <span className={cn("text-white font-bold text-lg", isRTL && "font-cairo")}>
-                  {isRTL ? "ع" : "A"}
+                  {logoInitial}
                 </span>
               </div>
               <span className={cn("text-xl font-bold", isRTL && "font-cairo")}>
-                {t.company.name}
+                {companyName}
               </span>
             </div>
             <p className={cn(
               "text-slate-400 mb-6 max-w-sm leading-relaxed",
               isRTL && "font-cairo"
             )}>
-              {t.company.description}
+              {companyDescription}
             </p>
             {/* Social Links */}
             <div className="flex gap-3">
@@ -313,14 +318,14 @@ export function Footer() {
               "text-slate-500 text-xs sm:text-sm text-center sm:text-start",
               isRTL && "font-cairo"
             )}>
-              &copy; {new Date().getFullYear()} {t.company.name}. {t.copyright}
+              &copy; {new Date().getFullYear()} {companyName}. {copyright}
             </p>
             <div className="flex flex-col items-center sm:items-end gap-2">
               <p className={cn(
                 "text-slate-500 text-xs sm:text-sm",
                 isRTL && "font-cairo"
               )}>
-                {t.madeWith}
+                {madeWith}
               </p>
               <Link 
                 to="/admin" 

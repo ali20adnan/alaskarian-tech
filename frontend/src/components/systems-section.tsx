@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useLanguage } from "@/src/contexts/language-context"
+import { useSiteConfig } from "@/src/contexts/site-config-context"
 import { cn } from "@/src/lib/utils"
 import { ChevronLeft, ChevronRight, Monitor, ImageOff, Pill, ShoppingCart, Landmark, Stethoscope, Factory, GraduationCap, LayoutGrid, TrendingUp, Smartphone, Settings, SlidersHorizontal } from "lucide-react"
 import { useNavigate } from "react-router-dom"
@@ -218,7 +219,8 @@ function ProductImage({ src, alt }: { src?: string; alt: string }) {
 }
 
 export function SystemsSection() {
-  const { isRTL } = useLanguage()
+  const { isRTL, language } = useLanguage()
+  const { config } = useSiteConfig()
   const navigate = useNavigate()
   const t = isRTL ? translations.ar : translations.en
   const [activeFilter, setActiveFilter] = useState("all")
@@ -273,27 +275,31 @@ export function SystemsSection() {
               "text-sm text-muted-foreground mb-2 block",
               isRTL && "font-cairo"
             )}>
-              {t.sectionLabel}
+              {language === 'ar' ? config.systems.sectionLabelAr : config.systems.sectionLabelEn}
             </span>
             <h2 className={cn(
               "text-2xl sm:text-3xl md:text-4xl font-bold mb-4",
               isRTL && "font-cairo"
             )}>
-              <span className="text-foreground">{isRTL ? "أنظمة" : "Al-Askaryan"}</span>
+              <span className="text-foreground">
+                {language === 'ar' ? config.systems.titleAr : config.systems.titleEn}
+              </span>
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">{isRTL ? "العسكريان" : "Systems"}</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-600">
+                {language === 'ar' ? config.systems.titleHighlightAr : config.systems.titleHighlightEn}
+              </span>
             </h2>
             <p className={cn(
               "text-muted-foreground mb-6 text-sm sm:text-base",
               isRTL && "font-cairo"
             )}>
-              {t.subtitle}
+              {language === 'ar' ? config.systems.subtitleAr : config.systems.subtitleEn}
             </p>
             <button className={cn(
               "inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-slate-300 dark:border-slate-700 text-foreground font-semibold hover:border-cyan-500 hover:text-cyan-500 transition-colors",
               isRTL && "font-cairo"
             )}>
-              {t.cta}
+              {language === 'ar' ? config.systems.ctaAr : config.systems.ctaEn}
               <ChevronLeft className={cn("w-4 h-4", !isRTL && "rotate-180")} />
             </button>
           </div>
@@ -326,7 +332,7 @@ export function SystemsSection() {
                 )}
               >
                 <SlidersHorizontal className="h-4 w-4" />
-                {t.viewAll}
+                {language === 'ar' ? config.systems.viewAllAr : config.systems.viewAllEn}
               </button>
             </div>
 

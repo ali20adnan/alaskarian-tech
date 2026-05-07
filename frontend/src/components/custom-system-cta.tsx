@@ -1,11 +1,14 @@
 import { motion } from "motion/react"
 import { Button } from "@/src/components/ui/button"
 import { useLanguage } from "@/src/contexts/language-context"
+import { useSiteConfig } from "@/src/contexts/site-config-context"
 import { cn } from "@/src/lib/utils"
 import { Monitor, Smartphone, Wrench, Send } from "lucide-react"
 
 export function CustomSystemCTA() {
   const { isRTL } = useLanguage()
+  const { config } = useSiteConfig()
+  const cta = config.cta
 
   return (
     <section className="py-20 bg-white dark:bg-slate-950 overflow-hidden">
@@ -18,10 +21,10 @@ export function CustomSystemCTA() {
             className="text-4xl md:text-5xl font-bold mb-8 flex flex-wrap justify-center gap-x-3"
           >
             <span className="text-slate-900 dark:text-white">
-              {isRTL ? "اصنع نظامك" : "Create Your Own"}
+              {isRTL ? cta.titleAr : cta.titleEn}
             </span>
             <span className="text-blue-600">
-              {isRTL ? "الخاص!" : "System!"}
+              {isRTL ? cta.titleHighlightAr : cta.titleHighlightEn}
             </span>
           </motion.h2>
 
@@ -35,7 +38,7 @@ export function CustomSystemCTA() {
               className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-6 rounded-full text-xl font-bold shadow-xl shadow-blue-500/20 group flex items-center justify-center gap-3"
             >
               <span className="font-cairo uppercase">
-                {isRTL ? "انضم الآن" : "Join Now"}
+                {isRTL ? cta.buttonAr : cta.buttonEn}
               </span>
               <Send className={cn("h-6 w-6 transition-transform group-hover:translate-x-1", isRTL && "-scale-x-100 group-hover:-translate-x-1")} />
             </Button>

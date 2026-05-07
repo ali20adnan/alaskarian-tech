@@ -64,7 +64,7 @@ productsRouter.delete("/:id", (req, res) => {
   }
 });
 
-productsRouter.post("/upload", upload.single("file"), (req, res) => {
+productsRouter.post("/upload", upload.single("file"), (req: import("express").Request & { file?: import("multer").File }, res) => {
   try {
     if (!req.file) {
       res.status(400).json({ error: "No file uploaded" });

@@ -81,12 +81,12 @@ export function Navbar() {
             <div className="relative">
               <div className="w-10 h-10 rounded-lg border-2 border-cyan-500 bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
                 <span className="text-white font-bold text-lg">
-                  {isRTL ? "ع" : "A"}
+                  {language === "ar" ? config.navbar.logoInitialAr : config.navbar.logoInitialEn}
                 </span>
               </div>
             </div>
             <span className={cn("text-lg font-bold text-foreground", isRTL && "font-cairo")}>
-              {t.logo.title}
+              {language === "ar" ? config.navbar.logoTitleAr : config.navbar.logoTitleEn}
             </span>
           </Link>
 
@@ -180,7 +180,9 @@ export function Navbar() {
             >
               <Phone className="w-4 h-4" />
               <span className={isRTL ? "font-cairo" : ""}>
-                {isRTL ? `خدمة العملاء ${config.contact.phone}` : `Customer Service ${config.contact.phone}`}
+                {language === "ar" 
+                  ? `${config.navbar.customerServiceAr} ${config.contact.phone}` 
+                  : `${config.navbar.customerServiceEn} ${config.contact.phone}`}
               </span>
             </a>
 
@@ -270,7 +272,11 @@ export function Navbar() {
               )}
             >
               <Phone className="w-4 h-4" />
-              <span>{isRTL ? `خدمة العملاء ${config.contact.phone}` : `Customer Service ${config.contact.phone}`}</span>
+              <span>
+                {language === "ar" 
+                  ? `${config.navbar.customerServiceAr} ${config.contact.phone}` 
+                  : `${config.navbar.customerServiceEn} ${config.contact.phone}`}
+              </span>
             </a>
 
             {/* Mobile Language Switcher */}

@@ -63,12 +63,14 @@ export function SupportChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputValue.trim() && !mediaPreview) return
+
+    const messageText = inputValue.trim() || (isRTL ? "مرفق صورة" : "Image attachment");
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: inputValue.trim() || (isRTL ? "مرفق صورة" : "Image attachment"),
+      text: messageText,
       sender: "user",
       timestamp: new Date(),
       imageUrl: mediaPreview || undefined,
@@ -79,6 +81,20 @@ export function SupportChat() {
     setMediaPreview(null)
     setShowEmojiPopup(false)
     setIsTyping(true)
+
+    try {
+      // Forward the message to the backend which will ping Telegram
+      await fetch("/api/support/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: messageText,
+          senderName: "Customer (Web Chat)",
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to notify support backend:", err);
+    }
 
     // Simulate support response
     setTimeout(() => {
