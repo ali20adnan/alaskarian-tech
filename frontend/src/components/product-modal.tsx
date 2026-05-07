@@ -19,6 +19,7 @@ export interface Product {
   features?: string[]
   imageUrl?: string
   videoUrl?: string
+  imageUrls?: string[]
   /** Resolved filter label (e.g. أنظمة مبيعات) for UI chips */
   categoryLabel?: string
 }
@@ -102,16 +103,27 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
     }
   }, [isOpen, onClose])
 
-  if (!mounted) return null
-
   const IconComponent = product?.icon || Monitor
-  
-  // Mock screenshots (in real app, these would come from product data)
-  const screenshots = [1, 2, 3, 4]
 
-  const nextImage = () => setCurrentImage((prev) => (prev + 1) % screenshots.length)
-  const prevImage = () => setCurrentImage((prev) => (prev - 1 + screenshots.length) % screenshots.length)
-  const youtubeId = product?.videoUrl?.match(/(?:v=|be\/)([^?&]+)/)?.[1] ?? null
+  const carouselItems = React.useMemo(() => {
+    if (!product) return []
+    const items = []
+    if (product.videoUrl) items.push({ type: "video", url: product.videoUrl })
+    
+    const imgs = product.imageUrls && product.imageUrls.length > 0 
+      ? product.imageUrls 
+      : (product.imageUrl ? [product.imageUrl] : [])
+      
+    imgs.forEach(url => items.push({ type: "image", url }))
+    return items
+  }, [product])
+
+  const nextImage = () => setCurrentImage((prev) => (prev + 1) % carouselItems.length)
+  const prevImage = () => setCurrentImage((prev) => (prev - 1 + carouselItems.length) % carouselItems.length)
+  
+  const youtubeId = (url: string) => url.match(/(?:v=|be\/)([^?&]+)/)?.[1] ?? null
+
+  if (!mounted) return null
 
   return createPortal(
     <AnimatePresence>
@@ -256,78 +268,69 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
               )}>
                 {t.screenshots}
               </h3>
-              
-              <div className="flex gap-2">
-                <button
-                  onClick={prevImage}
-                  className="w-9 h-9 rounded-full bg-white dark:bg-slate-800 shadow-md flex items-center justify-center text-muted-foreground hover:text-cyan-500 transition-all border border-slate-200 dark:border-slate-700"
-                >
-                  <ChevronLeft className={cn("w-5 h-5", isRTL && "rotate-180")} />
-                </button>
-                <button
-                  onClick={nextImage}
-                  className="w-9 h-9 rounded-full bg-white dark:bg-slate-800 shadow-md flex items-center justify-center text-muted-foreground hover:text-cyan-500 transition-all border border-slate-200 dark:border-slate-700"
-                >
-                  <ChevronRight className={cn("w-5 h-5", isRTL && "rotate-180")} />
-                </button>
-              </div>
             </div>
             
             <div className="relative">
               {/* Images/Video Carousel */}
-              <div className="overflow-hidden rounded-xl">
-                <div className="flex">
-                    <div className="shrink-0 w-full aspect-video p-1">
-                      <div className="w-full h-full bg-slate-200 dark:bg-slate-800 rounded-xl overflow-hidden relative border border-slate-200 dark:border-slate-700 shadow-lg">
-                        {product.videoUrl && !previewVideoFailed ? (
-                          <div className="w-full h-full">
-                            {(product.videoUrl.includes("youtube.com") || product.videoUrl.includes("youtu.be")) && youtubeId ? (
-                               <iframe
-                                  className="w-full h-full"
-                                  src={`https://www.youtube.com/embed/${youtubeId}`}
-                                  title="Product Video"
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-view"
-                                  allowFullScreen
-                               />
-                            ) : (
-                               <video
-                                  src={product.videoUrl}
-                                  controls
-                                  className="w-full h-full object-contain bg-black"
-                                  onError={() => setPreviewVideoFailed(true)}
-                               />
-                            )}
-                          </div>
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 border-4 border-white/10">
-                            {product.imageUrl && !previewImageFailed ? (
-                              <img
-                                src={product.imageUrl}
-                                alt="Preview"
-                                className="w-full h-full object-contain"
-                                onError={() => setPreviewImageFailed(true)}
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center">
-                                {product.videoUrl ? (
-                                  <VideoOff className="w-14 h-14 text-slate-400" />
-                                ) : (
-                                  <ImageOff className="w-14 h-14 text-slate-400" />
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Status Badge */}
-                        <div className="absolute bottom-3 left-3">
-                          <div className="px-2 py-1 rounded bg-black/50 backdrop-blur-sm text-[10px] text-white font-medium">
-                            {product.videoUrl ? (isRTL ? "عرض الفيديو" : "Video Demo") : (isRTL ? "صورة المنتج" : "Product Image")}
-                          </div>
+              <div className="group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl bg-slate-100 dark:bg-slate-950">
+                <div 
+                  className="flex transition-transform duration-700 cubic-bezier(0.4, 0, 0.2, 1)"
+                  style={{ transform: `translateX(${isRTL ? (currentImage * 100) : -(currentImage * 100)}%)` }}
+                >
+                  {carouselItems.map((item, idx) => (
+                    <div key={idx} className="shrink-0 w-full aspect-video flex items-center justify-center">
+                      {item.type === "video" ? (
+                        <div className="w-full h-full">
+                          {(item.url.includes("youtube.com") || item.url.includes("youtu.be")) ? (
+                             <iframe
+                                className="w-full h-full"
+                                src={`https://www.youtube.com/embed/${youtubeId(item.url)}`}
+                                title="Product Video"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-view"
+                                allowFullScreen
+                             />
+                          ) : (
+                             <video
+                                src={item.url}
+                                controls
+                                className="w-full h-full object-contain bg-black"
+                             />
+                          )}
                         </div>
-                      </div>
+                      ) : (
+                        <img
+                          src={item.url}
+                          alt={`Preview ${idx}`}
+                          className="w-full h-full object-contain select-none"
+                        />
+                      )}
                     </div>
+                  ))}
                 </div>
+
+                {/* Navigation Arrows - Overlayed */}
+                {carouselItems.length > 1 && (
+                  <>
+                    <button
+                      onClick={prevImage}
+                      className={cn(
+                        "absolute top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition-all opacity-0 group-hover:opacity-100",
+                        isRTL ? "right-4" : "left-4"
+                      )}
+                    >
+                      {isRTL ? <ChevronRight className="w-6 h-6" /> : <ChevronLeft className="w-6 h-6" />}
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className={cn(
+                        "absolute top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 flex items-center justify-center text-white transition-all opacity-0 group-hover:opacity-100",
+                        isRTL ? "left-4" : "right-4"
+                      )}
+                    >
+                      {isRTL ? <ChevronLeft className="w-6 h-6" /> : <ChevronRight className="w-6 h-6" />}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

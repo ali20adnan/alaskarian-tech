@@ -315,23 +315,24 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
     }
   }
 
-  const handleCreateProduct = async () => {
+  const handleCreateProduct = async (draft: any) => {
     const res = await fetch("/api/products", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newProduct)
+      body: JSON.stringify(draft)
     })
     if (res.ok) {
       setNewProduct({ nameAr: "", nameEn: "", price: 0, category: "", descriptionAr: "", descriptionEn: "", imageUrl: "", imageUrls: [], videoUrl: "", iconName: "Box" })
+      setEditingProduct(null)
       fetchProducts()
     }
   }
 
-  const handleUpdateProduct = async () => {
-    const res = await fetch(`/api/products/${editingProduct.id}`, {
+  const handleUpdateProduct = async (draft: any) => {
+    const res = await fetch(`/api/products/${draft.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editingProduct)
+      body: JSON.stringify(draft)
     })
     if (res.ok) {
       setEditingProduct(null)
@@ -804,21 +805,21 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                        <div className="space-y-4">
                           <div className="space-y-2">
                              <label className="text-xs font-bold text-slate-500 uppercase">{isRTL ? "رمز الشعار (EN)" : "Logo Initial (EN)"}</label>
-                             <input type="text" maxLength={1} value={localConfig.navbar.logoInitialEn} onChange={(e) => setLocalConfig({...localConfig, navbar: {...localConfig.navbar, logoInitialEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                             <input type="text" maxLength={1} value={localConfig.navbar.logoInitialEn || ""} onChange={(e) => setLocalConfig({...localConfig, navbar: {...localConfig.navbar, logoInitialEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
                           </div>
                           <div className="space-y-2">
                              <label className="text-xs font-bold text-slate-500 uppercase">{isRTL ? "نص خدمة العملاء (EN)" : "Customer Service (EN)"}</label>
-                             <input type="text" value={localConfig.navbar.customerServiceEn} onChange={(e) => setLocalConfig({...localConfig, navbar: {...localConfig.navbar, customerServiceEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                             <input type="text" value={localConfig.navbar.customerServiceEn || ""} onChange={(e) => setLocalConfig({...localConfig, navbar: {...localConfig.navbar, customerServiceEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
                           </div>
                        </div>
                        <div className="space-y-4">
                           <div className="space-y-2">
                              <label className="text-xs font-bold text-slate-500 uppercase">{isRTL ? "رمز الشعار (AR)" : "Logo Initial (AR)"}</label>
-                             <input type="text" maxLength={1} dir="rtl" value={localConfig.navbar.logoInitialAr} onChange={(e) => setLocalConfig({...localConfig, navbar: {...localConfig.navbar, logoInitialAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
+                             <input type="text" maxLength={1} dir="rtl" value={localConfig.navbar.logoInitialAr || ""} onChange={(e) => setLocalConfig({...localConfig, navbar: {...localConfig.navbar, logoInitialAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
                           </div>
                           <div className="space-y-2">
                              <label className="text-xs font-bold text-slate-500 uppercase">{isRTL ? "نص خدمة العملاء (AR)" : "Customer Service (AR)"}</label>
-                             <input type="text" dir="rtl" value={localConfig.navbar.customerServiceAr} onChange={(e) => setLocalConfig({...localConfig, navbar: {...localConfig.navbar, customerServiceAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
+                             <input type="text" dir="rtl" value={localConfig.navbar.customerServiceAr || ""} onChange={(e) => setLocalConfig({...localConfig, navbar: {...localConfig.navbar, customerServiceAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
                           </div>
                        </div>
                     </div>
@@ -837,25 +838,25 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                           <div className="grid grid-cols-2 gap-4">
                              <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-500 uppercase">Label (EN)</label>
-                                <input type="text" value={localConfig.systems.sectionLabelEn} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, sectionLabelEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                                <input type="text" value={localConfig.systems.sectionLabelEn || ""} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, sectionLabelEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
                              </div>
                              <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-500 uppercase">Title (EN)</label>
-                                <input type="text" value={localConfig.systems.titleEn} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, titleEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                                <input type="text" value={localConfig.systems.titleEn || ""} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, titleEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
                              </div>
                           </div>
                           <div className="space-y-2">
                              <label className="text-xs font-bold text-slate-500 uppercase">Subtitle (EN)</label>
-                             <textarea value={localConfig.systems.subtitleEn} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, subtitleEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white h-20" />
+                             <textarea value={localConfig.systems.subtitleEn || ""} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, subtitleEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white h-20" />
                           </div>
                           <div className="grid grid-cols-2 gap-4">
                              <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-500 uppercase">CTA (EN)</label>
-                                <input type="text" value={localConfig.systems.ctaEn} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, ctaEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                                <input type="text" value={localConfig.systems.ctaEn || ""} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, ctaEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
                              </div>
                              <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-500 uppercase">View All (EN)</label>
-                                <input type="text" value={localConfig.systems.viewAllEn} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, viewAllEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
+                                <input type="text" value={localConfig.systems.viewAllEn || ""} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, viewAllEn: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white" />
                              </div>
                           </div>
                        </div>
@@ -863,21 +864,21 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                           <div className="grid grid-cols-2 gap-4">
                              <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-500 uppercase font-cairo">العنوان الجانبي (AR)</label>
-                                <input type="text" dir="rtl" value={localConfig.systems.sectionLabelAr} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, sectionLabelAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
+                                <input type="text" dir="rtl" value={localConfig.systems.sectionLabelAr || ""} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, sectionLabelAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
                              </div>
                              <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-500 uppercase font-cairo">العنوان (AR)</label>
-                                <input type="text" dir="rtl" value={localConfig.systems.titleAr} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, titleAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
+                                <input type="text" dir="rtl" value={localConfig.systems.titleAr || ""} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, titleAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
                              </div>
                           </div>
                           <div className="space-y-2">
                              <label className="text-xs font-bold text-slate-500 uppercase font-cairo">الوصف (AR)</label>
-                             <textarea dir="rtl" value={localConfig.systems.subtitleAr} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, subtitleAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo h-20" />
+                             <textarea dir="rtl" value={localConfig.systems.subtitleAr || ""} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, subtitleAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo h-20" />
                           </div>
                           <div className="grid grid-cols-2 gap-4">
                              <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-500 uppercase font-cairo">نص الزر (AR)</label>
-                                <input type="text" dir="rtl" value={localConfig.systems.ctaAr} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, ctaAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
+                                <input type="text" dir="rtl" value={localConfig.systems.ctaAr || ""} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, ctaAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
                              </div>
                              <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-500 uppercase font-cairo">عرض الكل (AR)</label>
