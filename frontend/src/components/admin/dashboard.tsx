@@ -38,6 +38,9 @@ import {
   ImageOff,
   Shield,
   Zap,
+  HardDrive,
+  Database as DatabaseIcon,
+  Activity,
   Smartphone,
   LayoutGrid,
   Mail,
@@ -47,6 +50,7 @@ import {
   Stethoscope,
   Factory,
   GraduationCap,
+  Send
 } from "lucide-react"
 import { cn } from "@/src/lib/utils"
 import { Button } from "@/src/components/ui/button"
@@ -187,6 +191,30 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
   const [products, setProducts] = useState<any[]>([])
   const [isProductsLoading, setIsProductsLoading] = useState(false)
   const [editingProduct, setEditingProduct] = useState<any>(null)
+  const [systemStatus, setSystemStatus] = useState<any[]>([
+    { label: "Auth API", status: "operational", icon: "ShieldCheck" },
+    { label: "Database", status: "operational", icon: "Database" },
+    { label: "File Storage", status: "operational", icon: "HardDrive" },
+    { label: "Search Engine", status: "operational", icon: "Search" }
+  ])
+
+  const fetchSystemStatus = async () => {
+    try {
+      const res = await fetch("/api/health")
+      if (res.ok) {
+        const data = await res.json()
+        setSystemStatus(data)
+      }
+    } catch (err) {
+      console.error("Failed to fetch system status", err)
+    }
+  }
+
+  useEffect(() => {
+    fetchSystemStatus()
+    const interval = setInterval(fetchSystemStatus, 30000)
+    return () => clearInterval(interval)
+  }, [])
   const [newProduct, setNewProduct] = useState({
     nameAr: "",
     nameEn: "",
@@ -303,6 +331,36 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
   useEffect(() => {
     setNotifications(initialNotifications)
   }, [initialNotifications])
+
+  const handleTestTelegram = async () => {
+    if (!localConfig.integrations?.telegram?.botToken || !localConfig.integrations?.telegram?.chatId) {
+      toast.error(isRTL ? "يرجى إدخال التوكن ومعرف الدردشة أولاً" : "Please enter bot token and chat ID first")
+      return
+    }
+
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${localConfig.integrations.telegram.botToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: localConfig.integrations.telegram.chatId,
+          text: isRTL 
+            ? "🚀 *اختبار اتصال العسكريان للحلول البرمجية*\n\nتم ربط لوحة التحكم بنجاح! ستصلك الإشعارات هنا عند وصول رسائل جديدة." 
+            : "🚀 *Alaskarian Tech Connection Test*\n\nDashboard connected successfully! You will receive notifications here for new messages.",
+          parse_mode: "Markdown"
+        })
+      })
+
+      if (res.ok) {
+        toast.success(isRTL ? "تم إرسال رسالة الاختبار بنجاح!" : "Test message sent successfully!")
+      } else {
+        const err = await res.json()
+        toast.error(`${isRTL ? "فشل الاتصال:" : "Connection failed:"} ${err.description || "Unknown error"}`)
+      }
+    } catch (err) {
+      toast.error(isRTL ? "خطأ في الاتصال بخوادم تيليجرام" : "Error connecting to Telegram servers")
+    }
+  }
 
   const fetchProducts = async () => {
     setIsProductsLoading(true)
@@ -681,15 +739,30 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                       {isRTL ? "حالة النظام" : "System Status"}
                     </h3>
                     <div className="space-y-4">
-                      {["Auth API", "Database", "File Storage", "Search Engine"].map((service) => (
-                        <div key={service} className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                          <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-sm font-medium dark:text-slate-200">{service}</span>
+                      {systemStatus.map((service) => {
+                        const isOk = service.status === "operational"
+                        const isDegraded = service.status === "degraded"
+                        
+                        return (
+                          <div key={service.label} className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 group hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                            <div className="flex items-center gap-3">
+                              <div className={cn(
+                                "w-2 h-2 rounded-full animate-pulse",
+                                isOk ? "bg-emerald-500" : isDegraded ? "bg-amber-500" : "bg-red-500"
+                              )} />
+                              <span className="text-sm font-medium dark:text-slate-200">{service.label}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className={cn(
+                                "text-[10px] font-bold uppercase tracking-wider",
+                                isOk ? "text-emerald-500" : isDegraded ? "text-amber-500" : "text-red-500"
+                              )}>
+                                {service.status}
+                              </span>
+                            </div>
                           </div>
-                          <span className="text-xs text-emerald-500 font-bold uppercase tracking-wider">Operational</span>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
@@ -885,6 +958,98 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                                 <input type="text" dir="rtl" value={localConfig.systems.viewAllAr} onChange={(e) => setLocalConfig({...localConfig, systems: {...localConfig.systems, viewAllAr: e.target.value}})} className="w-full p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white font-cairo" />
                              </div>
                           </div>
+                       </div>
+                    </div>
+                  </div>
+
+                  {/* Integrations & Telegram Control */}
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800 p-8 space-y-6">
+                    <div className="flex items-center justify-between mb-2">
+                       <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center">
+                             <Bell className="w-4 h-4" />
+                          </div>
+                          <h3 className="text-xl font-bold dark:text-white">{isRTL ? "التكامل والإشعارات" : "Integrations & Notifications"}</h3>
+                       </div>
+                       <div className="flex items-center gap-3">
+                          <span className="text-sm font-medium text-slate-500">{isRTL ? "تفعيل تيليجرام" : "Enable Telegram"}</span>
+                          <button
+                            onClick={() => {
+                              const current = localConfig.integrations?.telegram?.enabled || false
+                              setLocalConfig({
+                                ...localConfig,
+                                integrations: {
+                                  ...localConfig.integrations,
+                                  telegram: { ...(localConfig.integrations?.telegram || {}), enabled: !current }
+                                }
+                              })
+                            }}
+                            className={`w-12 h-6 rounded-full transition-colors relative ${
+                              localConfig.integrations?.telegram?.enabled ? "bg-cyan-600" : "bg-slate-200 dark:bg-slate-700"
+                            }`}
+                          >
+                            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${
+                              localConfig.integrations?.telegram?.enabled ? (isRTL ? "left-1" : "right-1") : (isRTL ? "right-1" : "left-1")
+                            }`} />
+                          </button>
+                       </div>
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border dark:border-slate-700 space-y-6">
+                       <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 rounded-full bg-[#0088cc]/10 text-[#0088cc] flex items-center justify-center">
+                             <Send className="w-5 h-5" />
+                          </div>
+                          <div>
+                             <h4 className="font-bold dark:text-white">Telegram Bot</h4>
+                             <p className="text-xs text-slate-500">{isRTL ? "استقبل إشعارات الدردشة مباشرة على تيليجرام" : "Receive chat notifications directly on Telegram"}</p>
+                          </div>
+                       </div>
+
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold text-slate-500 uppercase">{isRTL ? "توكن البوت (Bot Token)" : "Bot Token"}</label>
+                             <input 
+                               type="password" 
+                               value={localConfig.integrations?.telegram?.botToken || ""} 
+                               onChange={(e) => setLocalConfig({
+                                 ...localConfig,
+                                 integrations: {
+                                   ...localConfig.integrations,
+                                   telegram: { ...(localConfig.integrations?.telegram || {}), botToken: e.target.value }
+                                 }
+                               })} 
+                               className="w-full p-3 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white text-sm"
+                               placeholder="123456:ABC-DEF..."
+                             />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-xs font-bold text-slate-500 uppercase">{isRTL ? "معرف الدردشة (Chat ID)" : "Chat ID"}</label>
+                             <input 
+                               type="text" 
+                               value={localConfig.integrations?.telegram?.chatId || ""} 
+                               onChange={(e) => setLocalConfig({
+                                 ...localConfig,
+                                 integrations: {
+                                   ...localConfig.integrations,
+                                   telegram: { ...(localConfig.integrations?.telegram || {}), chatId: e.target.value }
+                                 }
+                               })} 
+                               className="w-full p-3 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-700 dark:text-white text-sm"
+                               placeholder="-100123456789"
+                             />
+                          </div>
+                       </div>
+
+                       <div className="flex justify-end">
+                          <Button 
+                             variant="outline" 
+                             className="gap-2 border-cyan-500/20 text-cyan-600 hover:bg-cyan-50"
+                             onClick={handleTestTelegram}
+                          >
+                             <Send className="w-4 h-4" />
+                             {isRTL ? "إرسال رسالة اختبار" : "Send Test Message"}
+                          </Button>
                        </div>
                     </div>
                   </div>
