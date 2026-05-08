@@ -90,15 +90,16 @@ export function SystemsPage() {
     fetch("/api/products")
       .then((res) => res.json())
       .then((data) => {
-        const formatted = data.map((p: any) => ({
+        const validData = Array.isArray(data) ? data.filter((p: any) => p.nameAr || p.nameEn) : []
+        const formatted = validData.map((p: any) => ({
           id: `db-${p.id}`,
           category: p.category?.toLowerCase() || "sales",
-          title: isRTL ? p.nameAr : p.nameEn,
-          description: isRTL ? p.descriptionAr : p.descriptionEn,
-          price: p.price.toLocaleString(),
+          title: isRTL ? (p.nameAr || p.nameEn) : (p.nameEn || p.nameAr),
+          description: isRTL ? (p.descriptionAr || p.descriptionEn) : (p.descriptionEn || p.descriptionAr),
+          price: (p.price || 0).toLocaleString(),
           color: "from-blue-400 to-blue-500",
           barColor: "bg-gradient-to-r from-blue-400 to-cyan-400",
-          imageUrl: p.imageUrl,
+          imageUrl: p.imageUrls?.[0] || p.imageUrl,
           videoUrl: p.videoUrl,
         }))
         setDbProducts(formatted)

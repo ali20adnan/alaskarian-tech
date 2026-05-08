@@ -35,62 +35,7 @@ const translations = {
       sortPriceHigh: "Price: High to low",
       noResults: "No products match your filters",
     },
-    systems: [
-      {
-        id: 1,
-        category: "sales",
-        title: "Pharmacies & Warehouses",
-        description: "Provides excellent management for materials with the ability to set expiry dates and alert period before expiration to notify the user",
-        price: "1,124,000",
-        color: "from-green-400 to-green-500",
-        barColor: "bg-gradient-to-r from-orange-400 via-yellow-400 to-green-400",
-      },
-      {
-        id: 2,
-        category: "sales",
-        title: "Sales & Inventory",
-        description: "Integrated program for managing sales, purchases, and accounts for commercial companies and stores",
-        price: "824,000",
-        color: "from-pink-400 to-pink-500",
-        barColor: "bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400",
-      },
-      {
-        id: 3,
-        category: "admin",
-        title: "Banking & Transfers",
-        description: "Works according to the unified accounting system for managing banking and exchange company accounts",
-        price: "824,000",
-        color: "from-blue-400 to-blue-500",
-        barColor: "bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400",
-      },
-      {
-        id: 4,
-        category: "apps",
-        title: "Medical Clinics",
-        description: "Integrated system for managing medical clinics and complexes with many features to help organize work",
-        price: "824,000",
-        color: "from-teal-400 to-teal-500",
-        barColor: "bg-gradient-to-r from-teal-400 via-green-400 to-lime-400",
-      },
-      {
-        id: 5,
-        category: "admin",
-        title: "Factories & Plants",
-        description: "Comprehensive management for factories including raw materials, manufactured goods, and cost tracking",
-        price: "1,049,000",
-        color: "from-orange-400 to-orange-500",
-        barColor: "bg-gradient-to-r from-orange-400 via-red-400 to-pink-400",
-      },
-      {
-        id: 6,
-        category: "admin",
-        title: "Schools Management",
-        description: "Complete management for schools including student accounts and product accounting",
-        price: "824,000",
-        color: "from-purple-400 to-purple-500",
-        barColor: "bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400",
-      },
-    ] as (Omit<Product, 'icon'> & { category: string })[],
+
   },
   ar: {
     sectionLabel: "قسم الأنظمة",
@@ -118,62 +63,7 @@ const translations = {
       sortPriceHigh: "السعر: من الأعلى للأقل",
       noResults: "لا توجد منتجات مطابقة للفلاتر",
     },
-    systems: [
-      {
-        id: 1,
-        category: "sales",
-        title: "الصيدليات و المذاخر",
-        description: "يوفر إدارة ممتازة للمواد وذلك بإمكانية تحديد تاريخ صلاحية المواد وضبط فترة تنبيه قبل إنتهاء الصلاحية ليتم إعلام المستخدم",
-        price: "1,124,000",
-        color: "from-green-400 to-green-500",
-        barColor: "bg-gradient-to-r from-orange-400 via-yellow-400 to-green-400",
-      },
-      {
-        id: 2,
-        category: "sales",
-        title: "المبيعات و المخازن",
-        description: "برنامج متكامل لإدارة مبيعات و مشتريات وحسابات الشركات والمحلات التجارية",
-        price: "824,000",
-        color: "from-pink-400 to-pink-500",
-        barColor: "bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400",
-      },
-      {
-        id: 3,
-        category: "admin",
-        title: "الصيرفة و الحوالات",
-        description: "يعمل النظام وفق النظام المحاسبي الموحد لإدارة حسابات المكاتب والشركات الخاصة بالتعاملات المالية",
-        price: "824,000",
-        color: "from-blue-400 to-blue-500",
-        barColor: "bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400",
-      },
-      {
-        id: 4,
-        category: "apps",
-        title: "العيادات الطبية",
-        description: "نظام متكامل لإدارة عيادات الأطباء و المجمعات الطبية حيث يحتوي على الكثير من المميزات التي تساعد في تسهيل و تنظيم العمل",
-        price: "824,000",
-        color: "from-teal-400 to-teal-500",
-        barColor: "bg-gradient-to-r from-teal-400 via-green-400 to-lime-400",
-      },
-      {
-        id: 5,
-        category: "admin",
-        title: "المعامل و المصانع",
-        description: "إدارة شاملة للمعامل و المصانع من خلال تحديد المواد الأولية و المواد المصنعة و أيضا معرفة كلف المواد و كلف التصنيع",
-        price: "1,049,000",
-        color: "from-orange-400 to-orange-500",
-        barColor: "bg-gradient-to-r from-orange-400 via-red-400 to-pink-400",
-      },
-      {
-        id: 6,
-        category: "admin",
-        title: "إدارة المدارس",
-        description: "يعمل البرنامج وفق النظام المحاسبي و يتظم حسابات المنتسبات و إدارة كاملة للمدارس و المناهج",
-        price: "824,000",
-        color: "from-purple-400 to-purple-500",
-        barColor: "bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400",
-      },
-    ] as (Omit<Product, 'icon'> & { category: string })[],
+
   },
 }
 
@@ -261,7 +151,7 @@ export function SystemsSection() {
       .catch(err => console.error("Failed to fetch products:", err))
   }, [isRTL])
 
-  const allProducts = [...t.systems, ...dbProducts]
+  const allProducts = dbProducts
 
   const filteredSystems = activeFilter === "all" 
     ? allProducts 

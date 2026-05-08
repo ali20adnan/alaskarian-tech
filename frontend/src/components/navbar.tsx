@@ -22,6 +22,19 @@ export function Navbar() {
   const { config } = useSiteConfig()
   const whatsappLink = `https://wa.me/${(config.contact.whatsapp || config.contact.phone).replace(/[^\d]/g, "")}`
 
+  const [dbProducts, setDbProducts] = useState<any[]>([])
+
+  useEffect(() => {
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setDbProducts(data.filter((p: any) => p.nameAr || p.nameEn).slice(0, 5))
+        }
+      })
+      .catch((err) => console.error("Failed to fetch products for navbar:", err))
+  }, [])
+
   const navLinks: { href: string; label: string; hasDropdown: boolean; dropdownKey?: DropdownKey }[] = [
     { href: "#systems", label: t.nav.projects, hasDropdown: true, dropdownKey: "systems" },
     { href: "#services", label: t.nav.services, hasDropdown: true, dropdownKey: "services" },
@@ -138,30 +151,65 @@ export function Navbar() {
                     )}
                   >
                     <div className="bg-background/98 dark:bg-slate-900/98 backdrop-blur-xl border border-border dark:border-slate-700/50 rounded-xl shadow-xl dark:shadow-black/40 p-2 min-w-[280px]">
-                      {t.dropdowns[link.dropdownKey].map((item, index) => (
-                        <Link
-                          key={index}
-                          to={`/${link.dropdownKey}/${item.slug || index}`}
-                          onClick={handleMouseLeave}
-                          className={cn(
-                            "block px-4 py-3 rounded-lg hover:bg-muted dark:hover:bg-slate-800/80 transition-colors duration-200",
-                            isRTL && "text-right"
-                          )}
-                        >
-                          <span className={cn(
-                            "block font-medium text-foreground text-sm",
-                            isRTL && "font-cairo"
-                          )}>
-                            {item.title}
-                          </span>
-                          <span className={cn(
-                            "block text-xs text-muted-foreground mt-0.5",
-                            isRTL && "font-cairo"
-                          )}>
-                            {item.desc}
-                          </span>
-                        </Link>
-                      ))}
+                      {link.dropdownKey === "systems" ? (
+                        <>
+                          {dbProducts.map((product) => (
+                            <Link
+                              key={product.id}
+                              to={`/systems`}
+                              onClick={handleMouseLeave}
+                              className={cn(
+                                "block px-4 py-3 rounded-lg hover:bg-muted dark:hover:bg-slate-800/80 transition-colors duration-200",
+                                isRTL && "text-right"
+                              )}
+                            >
+                              <span className={cn("block font-medium text-foreground text-sm", isRTL && "font-cairo")}>
+                                {isRTL ? (product.nameAr || product.nameEn) : (product.nameEn || product.nameAr)}
+                              </span>
+                              <span className={cn("block text-xs text-muted-foreground mt-0.5 line-clamp-1", isRTL && "font-cairo")}>
+                                {isRTL ? (product.descriptionAr || product.descriptionEn) : (product.descriptionEn || product.descriptionAr)}
+                              </span>
+                            </Link>
+                          ))}
+                          <Link
+                            to="/systems"
+                            onClick={handleMouseLeave}
+                            className={cn(
+                              "block px-4 py-3 mt-2 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/30 transition-colors duration-200 text-center",
+                              isRTL && "font-cairo"
+                            )}
+                          >
+                            <span className="font-bold text-sm">
+                              {isRTL ? "عرض كل الأنظمة" : "View All Systems"}
+                            </span>
+                          </Link>
+                        </>
+                      ) : (
+                        t.dropdowns[link.dropdownKey].map((item, index) => (
+                          <Link
+                            key={index}
+                            to={`/${link.dropdownKey}/${item.slug || index}`}
+                            onClick={handleMouseLeave}
+                            className={cn(
+                              "block px-4 py-3 rounded-lg hover:bg-muted dark:hover:bg-slate-800/80 transition-colors duration-200",
+                              isRTL && "text-right"
+                            )}
+                          >
+                            <span className={cn(
+                              "block font-medium text-foreground text-sm",
+                              isRTL && "font-cairo"
+                            )}>
+                              {item.title}
+                            </span>
+                            <span className={cn(
+                              "block text-xs text-muted-foreground mt-0.5",
+                              isRTL && "font-cairo"
+                            )}>
+                              {item.desc}
+                            </span>
+                          </Link>
+                        ))
+                      )}
                     </div>
                   </div>
                 )}
@@ -365,19 +413,35 @@ function MobileNavItem({
         isOpen ? "max-h-96" : "max-h-0"
       )}>
         <div className="py-2 space-y-1">
-          {link.dropdownKey && dropdowns[link.dropdownKey].map((item, index) => (
-            <Link
-              key={index}
-              to={`/${link.dropdownKey}/${item.slug || index}`}
-              onClick={onClose}
-              className={cn(
-                "block px-6 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors",
-                isRTL && "font-cairo"
-              )}
-            >
-              {item.title}
-            </Link>
-          ))}
+          {link.dropdownKey === "systems" ? (
+            <>
+              {/* Note: In a real mobile menu you'd want to pass dbProducts down here, but for simplicity we'll just link to all systems */}
+              <Link
+                to="/systems"
+                onClick={onClose}
+                className={cn(
+                  "block px-6 py-2 text-sm text-cyan-600 dark:text-cyan-400 font-bold hover:text-cyan-700 transition-colors",
+                  isRTL && "font-cairo"
+                )}
+              >
+                {isRTL ? "عرض كل الأنظمة" : "View All Systems"}
+              </Link>
+            </>
+          ) : (
+            link.dropdownKey && dropdowns[link.dropdownKey].map((item, index) => (
+              <Link
+                key={index}
+                to={`/${link.dropdownKey}/${item.slug || index}`}
+                onClick={onClose}
+                className={cn(
+                  "block px-6 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors",
+                  isRTL && "font-cairo"
+                )}
+              >
+                {item.title}
+              </Link>
+            ))
+          )}
         </div>
       </div>
     </div>
