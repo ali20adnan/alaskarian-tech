@@ -72,11 +72,15 @@ const translations = {
 export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
   const { isRTL } = useLanguage()
   const t = isRTL ? translations.ar : translations.en
-  const [currentImage, setCurrentImage] = useState(0)
+  const [isRequesting, setIsRequesting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [requestData, setRequestData] = useState({ name: "", phone: "" })
   const [mounted, setMounted] = useState(false)
   const [headerImageFailed, setHeaderImageFailed] = useState(false)
   const [previewImageFailed, setPreviewImageFailed] = useState(false)
   const [previewVideoFailed, setPreviewVideoFailed] = useState(false)
+  const [currentImage, setCurrentImage] = useState(0)
 
   useEffect(() => {
     setMounted(true)
@@ -86,6 +90,7 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
     setHeaderImageFailed(false)
     setPreviewImageFailed(false)
     setPreviewVideoFailed(false)
+    setCurrentImage(0)
   }, [product?.id, isOpen])
 
   // Close on escape key
@@ -122,6 +127,38 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
   const prevImage = () => setCurrentImage((prev) => (prev - 1 + carouselItems.length) % carouselItems.length)
   
   const youtubeId = (url: string) => url.match(/(?:v=|be\/)([^?&]+)/)?.[1] ?? null
+
+  const handleRequestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!requestData.name || !requestData.phone) return
+
+    setIsSubmitting(true)
+    try {
+      const res = await fetch("/api/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: product?.id,
+          productTitle: product?.title,
+          customerName: requestData.name,
+          customerPhone: requestData.phone,
+        }),
+      })
+
+      if (res.ok) {
+        setIsSuccess(true)
+        setTimeout(() => {
+          setIsRequesting(false)
+          setIsSuccess(false)
+          setRequestData({ name: "", phone: "" })
+        }, 3000)
+      }
+    } catch (err) {
+      console.error("Failed to submit request", err)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   if (!mounted) return null
 
@@ -375,18 +412,105 @@ export function ProductModal({ isOpen, onClose, product }: ProductModalProps) {
                   {isRTL ? "تواصل معنا للحصول على عرض توضيحي مجاني" : "Contact us for a free demo"}
                 </p>
               </div>
-              <button className={cn(
-                "px-6 py-3 rounded-full bg-white text-cyan-600 font-bold hover:shadow-lg transition-all",
-                isRTL && "font-cairo"
-              )}>
+              <button 
+                onClick={() => setIsRequesting(true)}
+                className={cn(
+                  "px-6 py-3 rounded-full bg-white text-cyan-600 font-bold hover:shadow-lg transition-all",
+                  isRTL && "font-cairo"
+                )}
+              >
                 {t.requestDemo}
               </button>
             </div>
           </div>
         </div>
       </motion.div>
+
+        {/* Request Form Overlay */}
+        <AnimatePresence>
+          {isRequesting && (
+            <motion.div
+              initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+              animate={{ opacity: 1, backdropFilter: "blur(4px)" }}
+              exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+              className="absolute inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60"
+            >
+              <motion.div
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl p-8 shadow-2xl relative"
+              >
+                <button
+                  onClick={() => setIsRequesting(false)}
+                  className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                {isSuccess ? (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Check className="w-8 h-8" />
+                    </div>
+                    <h3 className={cn("text-xl font-bold mb-2", isRTL && "font-cairo")}>
+                      {isRTL ? "تم إرسال طلبك بنجاح!" : "Request Sent Successfully!"}
+                    </h3>
+                    <p className={cn("text-slate-500", isRTL && "font-cairo")}>
+                      {isRTL ? "سنتواصل معك في أقرب وقت ممكن." : "We will contact you as soon as possible."}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <h3 className={cn("text-2xl font-bold mb-6 text-center", isRTL && "font-cairo")}>
+                      {isRTL ? "طلب النظام" : "Request System"}
+                    </h3>
+                    <form onSubmit={handleRequestSubmit} className="space-y-4">
+                      <div className="space-y-2">
+                        <label className={cn("text-sm font-medium text-slate-500", isRTL && "font-cairo")}>
+                          {isRTL ? "الاسم الكامل" : "Full Name"}
+                        </label>
+                        <input
+                          required
+                          type="text"
+                          value={requestData.name}
+                          onChange={(e) => setRequestData({ ...requestData, name: e.target.value })}
+                          className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-cyan-500 outline-none dark:text-white"
+                          placeholder={isRTL ? "ادخل اسمك هنا" : "Enter your name"}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className={cn("text-sm font-medium text-slate-500", isRTL && "font-cairo")}>
+                          {isRTL ? "رقم الهاتف" : "Phone Number"}
+                        </label>
+                        <input
+                          required
+                          type="tel"
+                          value={requestData.phone}
+                          onChange={(e) => setRequestData({ ...requestData, phone: e.target.value })}
+                          className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-cyan-500 outline-none dark:text-white"
+                          placeholder={isRTL ? "0770..." : "0770..."}
+                        />
+                      </div>
+                      <button
+                        disabled={isSubmitting}
+                        type="submit"
+                        className={cn(
+                          "w-full py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold hover:shadow-lg transition-all active:scale-[0.98] disabled:opacity-50",
+                          isRTL && "font-cairo"
+                        )}
+                      >
+                        {isSubmitting ? (isRTL ? "جاري الإرسال..." : "Sending...") : (isRTL ? "تأكيد الطلب" : "Confirm Request")}
+                      </button>
+                    </form>
+                  </>
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         </motion.div>
-      )}
+    )}
     </AnimatePresence>,
     document.body,
   )

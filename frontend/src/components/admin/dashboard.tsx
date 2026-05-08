@@ -50,8 +50,10 @@ import {
   Stethoscope,
   Factory,
   GraduationCap,
-  Send
+  Send,
+  ClipboardList
 } from "lucide-react"
+import { toast } from "sonner"
 import { cn } from "@/src/lib/utils"
 import { Button } from "@/src/components/ui/button"
 import { useSiteConfig } from "@/src/contexts/site-config-context"
@@ -67,7 +69,7 @@ interface AdminDashboardProps {
   onToggleLanguage: () => void
 }
 
-type TabType = "overview" | "content" | "appearance" | "support" | "settings" | "logs" | "users" | "products" | "notifications"
+type TabType = "overview" | "content" | "appearance" | "support" | "settings" | "logs" | "users" | "products" | "notifications" | "requests"
 
 /** iOS-style switch; `dir="ltr"` keeps thumb motion correct inside RTL admin layout */
 function AdminToggle({
@@ -161,7 +163,8 @@ function AdminProductIcon({ name, className }: { name?: string; className?: stri
     Smartphone, 
     TrendingUp, 
     Settings, 
-    Box
+    Box,
+    ClipboardList
   }
   const Icon = (name && icons[name]) ? icons[name] : Box
   return <Icon className={className} />
@@ -191,6 +194,8 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
   const [products, setProducts] = useState<any[]>([])
   const [isProductsLoading, setIsProductsLoading] = useState(false)
   const [editingProduct, setEditingProduct] = useState<any>(null)
+  const [requests, setRequests] = useState<any[]>([])
+  const [isRequestsLoading, setIsRequestsLoading] = useState(false)
   const [systemStatus, setSystemStatus] = useState<any[]>([
     { label: "Auth API", status: "operational", icon: "ShieldCheck" },
     { label: "Database", status: "operational", icon: "Database" },
@@ -404,6 +409,34 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
     if (res.ok) fetchProducts()
   }
 
+  const fetchRequests = async () => {
+    setIsRequestsLoading(true)
+    try {
+      const res = await fetch("/api/requests")
+      const data = await res.json()
+      setRequests(data)
+    } finally {
+      setIsRequestsLoading(false)
+    }
+  }
+
+  const handleUpdateRequestStatus = async (id: string, status: string) => {
+    const res = await fetch(`/api/requests/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status })
+    })
+    if (res.ok) {
+      fetchRequests()
+    }
+  }
+
+  const handleDeleteRequest = async (id: string) => {
+    if (!confirm(isRTL ? "هل أنت متأكد من حذف هذا الطلب؟" : "Are you sure you want to delete this request?")) return
+    const res = await fetch(`/api/requests/${id}`, { method: "DELETE" })
+    if (res.ok) fetchRequests()
+  }
+
   // Sync local state with global config
   useEffect(() => {
     setLocalConfig(config)
@@ -518,6 +551,14 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
               isActive={activeTab === "products"} 
               onClick={() => setActiveTab("products")}
               isOpen={isSidebarOpen}
+            />
+            <NavItem 
+              icon={ClipboardList} 
+              label={isRTL ? "طلبات الأنظمة" : "System Requests"} 
+              isActive={activeTab === "requests"} 
+              onClick={() => setActiveTab("requests")}
+              isOpen={isSidebarOpen}
+              badge={requests.filter(r => r.status === "pending").length > 0 ? String(requests.filter(r => r.status === "pending").length) : undefined}
             />
             <NavItem 
               icon={FileText} 
@@ -2023,6 +2064,91 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                          <p className="text-slate-500">{isRTL ? "لا توجد منتجات حالياً" : "No products found"}</p>
                       </div>
                    )}
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === "requests" && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-6"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-3xl font-bold dark:text-white">{isRTL ? "طلبات الأنظمة" : "System Requests"}</h2>
+                    <p className="text-muted-foreground">{isRTL ? "إدارة طلبات شراء الأنظمة والعروض التوضيحية" : "Manage system purchase and demo requests"}</p>
+                  </div>
+                  <Button variant="outline" onClick={fetchRequests} className="gap-2">
+                    <RotateCcw className={cn("w-4 h-4", isRequestsLoading && "animate-spin")} />
+                    {isRTL ? "تحديث" : "Refresh"}
+                  </Button>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800 overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-right" dir={isRTL ? "rtl" : "ltr"}>
+                      <thead className="bg-slate-50 dark:bg-slate-800/50 border-b dark:border-slate-800">
+                        <tr>
+                          <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">{isRTL ? "العميل" : "Customer"}</th>
+                          <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">{isRTL ? "النظام المطلوب" : "System"}</th>
+                          <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">{isRTL ? "التاريخ" : "Date"}</th>
+                          <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">{isRTL ? "الحالة" : "Status"}</th>
+                          <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">{isRTL ? "إجراءات" : "Actions"}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y dark:divide-slate-800">
+                        {requests.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                              {isRTL ? "لا يوجد طلبات حالياً" : "No requests found"}
+                            </td>
+                          </tr>
+                        ) : (
+                          requests.map((req) => (
+                            <tr key={req.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                              <td className="px-6 py-4">
+                                <div className="font-bold dark:text-white">{req.customerName}</div>
+                                <div className="text-sm text-slate-500">{req.customerPhone}</div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 text-xs font-bold">
+                                  <Monitor className="w-3 h-3" />
+                                  {req.productTitle}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-sm text-slate-500">
+                                {new Date(req.createdAt).toLocaleDateString(isRTL ? "ar" : "en")}
+                              </td>
+                              <td className="px-6 py-4">
+                                <select 
+                                  value={req.status}
+                                  onChange={(e) => handleUpdateRequestStatus(req.id, e.target.value)}
+                                  className={cn(
+                                    "text-xs font-bold px-3 py-1.5 rounded-lg border-0 focus:ring-2 focus:ring-cyan-500 outline-none cursor-pointer",
+                                    req.status === "pending" && "bg-amber-100 text-amber-600 dark:bg-amber-900/30",
+                                    req.status === "contacted" && "bg-blue-100 text-blue-600 dark:bg-blue-900/30",
+                                    req.status === "completed" && "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30",
+                                    req.status === "cancelled" && "bg-red-100 text-red-600 dark:bg-red-900/30"
+                                  )}
+                                >
+                                  <option value="pending">{isRTL ? "قيد الانتظار" : "Pending"}</option>
+                                  <option value="contacted">{isRTL ? "تم التواصل" : "Contacted"}</option>
+                                  <option value="completed">{isRTL ? "مكتمل" : "Completed"}</option>
+                                  <option value="cancelled">{isRTL ? "ملغي" : "Cancelled"}</option>
+                                </select>
+                              </td>
+                              <td className="px-6 py-4">
+                                <Button variant="ghost" size="icon" className="text-red-500 hover:bg-red-50" onClick={() => handleDeleteRequest(req.id)}>
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </motion.div>
             )}

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "req_1",
+    "productId": "p1",
+    "productTitle": "نظام المحاسبة الذهبي",
+    "customerName": "شركة الأمل للتجارة",
+    "customerPhone": "07701234567",
+    "status": "pending",
+    "createdAt": "2026-05-07T12:00:00Z",
+    "notes": "يرجى التواصل بخصوص عرض السعر"
+  }
+]

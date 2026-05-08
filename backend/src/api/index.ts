@@ -5,6 +5,7 @@ import { logsRouter } from "./routes/logs.routes";
 import { productsRouter } from "./routes/products.routes";
 import { supportRouter } from "./routes/support.routes";
 import { healthRouter } from "./routes/health.routes";
+import { requestsRouter } from "./routes/requests.routes";
 
 /** HTTP API mounted at `/api`. */
 export const apiRouter = Router();
@@ -14,3 +15,4 @@ apiRouter.use("/products", productsRouter);
 apiRouter.use("/logs", logsRouter);
 apiRouter.use("/support", supportRouter);
 apiRouter.use("/health", healthRouter);
+apiRouter.use("/requests", requestsRouter);
