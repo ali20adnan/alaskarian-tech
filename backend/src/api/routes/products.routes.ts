@@ -57,12 +57,51 @@ productsRouter.put("/:id", (req, res) => {
 
 productsRouter.delete("/:id", (req, res) => {
   try {
-    deleteProduct(req.params.id);
-    res.json({ success: true });
-  } catch {
-    res.status(500).json({ error: "Failed to delete product" });
+    const productId = req.params.id;
+    console.log(`Received request to delete product ID: ${productId}`);
+
+    const products = listProducts();
+    const productToDelete = products.find(p => p.id.toString() === productId.toString());
+
+    if (productToDelete) {
+      // 1. Delete associated files
+      const filesToDelete = [
+        ...(productToDelete.imageUrls || []),
+        productToDelete.imageUrl,
+        productToDelete.videoUrl
+      ].filter(Boolean) as string[];
+
+      filesToDelete.forEach(fileUrl => {
+        const fileName = fileUrl.split("/").pop();
+        if (fileName) {
+          const filePath = path.join(uploadsDir, fileName);
+          if (fs.existsSync(filePath)) {
+            try {
+              fs.unlinkSync(filePath);
+              console.log(`Deleted associated file: ${filePath}`);
+            } catch (err) {
+              console.error(`Failed to delete file: ${filePath}`, err);
+            }
+          }
+        }
+      });
+
+      // 2. Delete from JSON
+      deleteProduct(productId);
+      
+      console.log(`Successfully deleted product section for ID: ${productId}`);
+      res.json({ success: true });
+    } else {
+      console.warn(`Product with ID ${productId} not found in database.`);
+      res.status(404).json({ error: "Product not found" });
+    }
+  } catch (error: any) {
+    console.error("Delete Product API Error:", error.message);
+    res.status(500).json({ error: "Internal server error during deletion" });
   }
 });
+
+
 
 productsRouter.post("/upload", upload.single("file"), (req: import("express").Request & { file?: import("multer").File }, res) => {
   try {

@@ -58,6 +58,25 @@ export function updateProduct(id: string, patch: Partial<Product>): void {
 
 export function deleteProduct(id: string): void {
   ensureProductsFile();
-  const products = listProducts().filter((p) => p.id !== id);
-  writeJsonFile(productsPath(), products);
+  const filePath = productsPath();
+  const products = listProducts();
+  
+  console.log(`[DATABASE] Attempting to delete product with ID: "${id}"`);
+  console.log(`[DATABASE] Target File Path: ${filePath}`);
+
+  // فلترة المنتجات مع التأكد من تحويل كل شيء لنصوص لإزالة أي مسافات زائدة
+  const filteredProducts = products.filter((p) => {
+    const pId = String(p.id).trim();
+    const targetId = String(id).trim();
+    return pId !== targetId;
+  });
+  
+  if (products.length === filteredProducts.length) {
+    console.error(`[DATABASE] FAILED: Could not find product with ID "${id}" in the list.`);
+  } else {
+    writeJsonFile(filePath, filteredProducts);
+    console.log(`[DATABASE] SUCCESS: Product "${id}" removed. New count: ${filteredProducts.length}`);
+  }
 }
+
+

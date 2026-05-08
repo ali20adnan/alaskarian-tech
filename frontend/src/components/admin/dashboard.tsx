@@ -202,6 +202,9 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
     { label: "File Storage", status: "operational", icon: "HardDrive" },
     { label: "Search Engine", status: "operational", icon: "Search" }
   ])
+  const [statsData, setStatsData] = useState<any>(null)
+  const [isStatsLoading, setIsStatsLoading] = useState(false)
+
 
   const fetchSystemStatus = async () => {
     try {
@@ -215,11 +218,31 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
     }
   }
 
+  const fetchOverviewStats = async () => {
+    setIsStatsLoading(true)
+    try {
+      const res = await fetch("/api/overview/stats")
+      if (res.ok) {
+        const data = await res.json()
+        setStatsData(data)
+      }
+    } catch (err) {
+      console.error("Failed to fetch overview stats", err)
+    } finally {
+      setIsStatsLoading(false)
+    }
+  }
+
   useEffect(() => {
     fetchSystemStatus()
-    const interval = setInterval(fetchSystemStatus, 30000)
+    fetchOverviewStats()
+    const interval = setInterval(() => {
+      fetchSystemStatus()
+      fetchOverviewStats()
+    }, 30000)
     return () => clearInterval(interval)
   }, [])
+
   const [newProduct, setNewProduct] = useState({
     nameAr: "",
     nameEn: "",
@@ -233,20 +256,8 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
     iconName: "Box"
   })
 
-  const [supportMessages, setSupportMessages] = useState<SupportMsg[]>([
-    {
-      id: "m1",
-      role: "user",
-      text: "مرحباً، اواجه مشكلة في تفعيل لوحة التحكم الجديدة. هل يمكنك المساعدة؟",
-      time: "10:15 AM",
-    },
-    {
-      id: "m2",
-      role: "agent",
-      text: "أهلاً بك أحمد، نعم بالتأكيد! نحتاج أولاً للتأكد من رقم المتسلسل للنظام لديك.",
-      time: "10:18 AM",
-    },
-  ])
+  const [supportMessages, setSupportMessages] = useState<SupportMsg[]>([])
+
   const [supportReply, setSupportReply] = useState("")
   const [supportImagePreview, setSupportImagePreview] = useState<string | null>(null)
   const [showSupportEmoji, setShowSupportEmoji] = useState(false)
@@ -255,21 +266,8 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
   const [activeChatBlocked, setActiveChatBlocked] = useState(false)
   const supportAttachmentRef = useRef<HTMLInputElement>(null)
 
-  const initialNotifications = useMemo<AdminNotification[]>(
-    () =>
-      isRTL
-        ? [
-            { id: "n1", title: "طلب دعم جديد", message: "عميل جديد فتح محادثة دعم.", time: "منذ دقيقتين", unread: true },
-            { id: "n2", title: "منتج مضاف", message: "تمت إضافة منتج جديد إلى المتجر.", time: "منذ 10 دقائق", unread: true },
-            { id: "n3", title: "نسخة احتياطية مكتملة", message: "اكتملت النسخة الاحتياطية اليومية بنجاح.", time: "منذ ساعة", unread: false },
-          ]
-        : [
-            { id: "n1", title: "New support request", message: "A new customer opened a support chat.", time: "2m ago", unread: true },
-            { id: "n2", title: "Product added", message: "A new product was added to the store.", time: "10m ago", unread: true },
-            { id: "n3", title: "Backup completed", message: "Daily backup finished successfully.", time: "1h ago", unread: false },
-          ],
-    [isRTL],
-  )
+  const initialNotifications = useMemo<AdminNotification[]>(() => [], []);
+
   const [notifications, setNotifications] = useState<AdminNotification[]>(initialNotifications)
   const unreadNotificationsCount = useMemo(() => notifications.filter((n) => n.unread).length, [notifications])
   const [isAddUserOpen, setIsAddUserOpen] = useState(false)
@@ -278,12 +276,9 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
     email: "",
     role: "editor" as "admin" | "editor",
   })
-  const [users, setUsers] = useState<AdminUser[]>([
-    { id: 1, name: "Admin User", email: "admin@alaskarian.tech", role: "admin", avatar: "" },
-    { id: 2, name: "Sarah Smith", email: "sarah@example.com", role: "editor", avatar: "" },
-    { id: 3, name: "محمد حسن", email: "m.hassan@example.com", role: "editor", avatar: "" },
-    { id: 4, name: "Ali Ahmed", email: "ali.ahmed@example.com", role: "editor", avatar: "" },
-  ])
+  const [users, setUsers] = useState<AdminUser[]>([])
+  const [isUsersLoading, setIsUsersLoading] = useState(false)
+
 
   const cannedReplies = useMemo(
     () =>
@@ -316,13 +311,31 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
   )
 
   useEffect(() => {
-    if (activeTab === "logs") {
-      fetch("/api/logs").then(res => res.json()).then(setLogs)
-    }
     if (activeTab === "products") {
       fetchProducts()
     }
+    if (activeTab === "users") {
+      fetchUsers()
+    }
   }, [activeTab])
+
+
+
+  const fetchUsers = async () => {
+    setIsUsersLoading(true)
+    try {
+      const res = await fetch("/api/users")
+      if (res.ok) {
+        const data = await res.json()
+        setUsers(data)
+      }
+    } catch (err) {
+      console.error("Failed to fetch users", err)
+    } finally {
+      setIsUsersLoading(false)
+    }
+  }
+
 
   useEffect(() => {
     const onResize = () => {
@@ -404,10 +417,22 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
   }
 
   const handleDeleteProduct = async (id: string) => {
-    if (!confirm(isRTL ? "هل أنت متأكد؟" : "Are you sure?")) return
-    const res = await fetch(`/api/products/${id}`, { method: "DELETE" })
-    if (res.ok) fetchProducts()
+    if (!confirm(isRTL ? "هل أنت متأكد من حذف هذا المنتج نهائياً مع كافة ملفاته؟" : "Are you sure you want to delete this product and all its files permanently?")) return
+    
+    try {
+      const res = await fetch(`/api/products/${id}`, { method: "DELETE" })
+      if (res.ok) {
+        toast.success(isRTL ? "تم حذف المنتج بنجاح" : "Product deleted successfully")
+        fetchProducts()
+      } else {
+        const err = await res.json()
+        toast.error(err.error || (isRTL ? "فشل حذف المنتج" : "Failed to delete product"))
+      }
+    } catch (err) {
+      toast.error(isRTL ? "خطأ في الاتصال بالسيرفر" : "Server connection error")
+    }
   }
+
 
   const fetchRequests = async () => {
     setIsRequestsLoading(true)
@@ -449,35 +474,53 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
     setIsSaving(false)
   }
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     const trimmedName = newUser.name.trim()
     const trimmedEmail = newUser.email.trim()
     if (!trimmedName || !trimmedEmail) return
 
-    const createdUser: AdminUser = {
-      id: Date.now(),
-      name: trimmedName,
-      email: trimmedEmail,
-      role: newUser.role,
-      avatar: "",
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: trimmedName,
+          email: trimmedEmail,
+          role: newUser.role
+        })
+      })
+
+      if (res.ok) {
+        const createdUser = await res.json()
+        setUsers((prev) => [createdUser, ...prev])
+        setNewUser({ name: "", email: "", role: "editor" })
+        setIsAddUserOpen(false)
+        toast.success(isRTL ? "تمت إضافة المستخدم بنجاح" : "User added successfully")
+      } else {
+        const err = await res.json()
+        toast.error(err.error || (isRTL ? "فشل إضافة المستخدم" : "Failed to add user"))
+      }
+    } catch (err) {
+      toast.error(isRTL ? "خطأ في الاتصال بالسيرفر" : "Server connection error")
     }
-    setUsers((prev) => [createdUser, ...prev])
-    setNewUser({ name: "", email: "", role: "editor" })
-    setIsAddUserOpen(false)
   }
 
-  const stats = [
-    { label: isRTL ? "مجموع المستخدمين" : "Total Users", value: "1,284", icon: Users, color: "bg-blue-500", trend: "+12%" },
-    { label: isRTL ? "دردشات نشطة" : "Active Chats", value: "14", icon: MessageSquare, color: "bg-cyan-500", trend: "-5%" },
-    { label: isRTL ? "معدل التحويل" : "Conversion Rate", value: "3.4%", icon: TrendingUp, color: "bg-emerald-500", trend: "+2%" },
-    { label: isRTL ? "أداء النظام" : "System Health", value: "99.9%", icon: CheckCircle2, color: "bg-purple-500", trend: "Stable" },
-  ]
+  const handleDeleteUser = async (id: number) => {
+    if (!confirm(isRTL ? "هل أنت متأكد من حذف هذا المستخدم؟" : "Are you sure you want to delete this user?")) return
+    try {
+      const res = await fetch(`/api/users/${id}`, { method: "DELETE" })
+      if (res.ok) {
+        setUsers(prev => prev.filter(u => u.id !== id))
+        toast.success(isRTL ? "تم حذف المستخدم" : "User deleted")
+      }
+    } catch (err) {
+      toast.error(isRTL ? "فشل الحذف" : "Delete failed")
+    }
+  }
 
-  const recentChats = [
-    { id: 1, user: "احمد علي", message: "احتاج مساعدة في تفعيل النظام", status: "online", time: "2m ago" },
-    { id: 2, user: "Sarah Smith", message: "How can I integrate the API?", status: "offline", time: "15m ago" },
-    { id: 3, user: "محمد حسن", message: "شكراً لكم، تم حل المشكلة", status: "online", time: "1h ago" },
-  ]
+
+  const recentChats = statsData?.recentChats || []
+
 
   return (
     <div className={cn(
@@ -724,7 +767,12 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
               >
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {stats.map((stat, i) => (
+                  {[
+                    { label: isRTL ? "مجموع المستخدمين" : "Total Users", value: statsData?.totalUsers || "0", icon: Users, color: "bg-blue-500", trend: statsData?.usersTrend || "0%" },
+                    { label: isRTL ? "دردشات نشطة" : "Active Chats", value: statsData?.activeChats || "0", icon: MessageSquare, color: "bg-cyan-500", trend: statsData?.chatsTrend || "0%" },
+                    { label: isRTL ? "الأنظمة المسجلة" : "Total Systems", value: statsData?.totalProducts || "0", icon: Box, color: "bg-emerald-500", trend: "Database" },
+                    { label: isRTL ? "طلبات الأنظمة" : "System Requests", value: statsData?.totalRequests || "0", icon: ClipboardList, color: "bg-purple-500", trend: "Live" },
+                  ].map((stat, i) => (
                     <motion.div 
                       key={stat.label}
                       initial={{ opacity: 0, y: 20 }}
@@ -751,6 +799,7 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                   ))}
                 </div>
 
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* Recent Activity */}
                   <div className="bg-white dark:bg-slate-900 rounded-3xl border dark:border-slate-800 p-8">
@@ -758,20 +807,30 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                       {isRTL ? "النشاط الأخير" : "Recent Activity"}
                     </h3>
                     <div className="space-y-6">
-                      {[1, 2, 3, 4].map((item) => (
-                        <div key={item} className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-slate-700 shrink-0 overflow-hidden">
-                             <img src={`https://i.pravatar.cc/100?img=${item + 10}`} alt="User" />
+                      {statsData?.activities?.length > 0 ? (
+                        statsData.activities.map((item: any, i: number) => (
+                          <div key={item.id || i} className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-cyan-100 dark:bg-cyan-900/30 border-2 border-white dark:border-slate-700 shrink-0 flex items-center justify-center">
+                               <Users className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm dark:text-slate-200">
+                                <span className="font-bold">{item.user}</span> {item.action}
+                                {item.location && <span className="text-muted-foreground ml-1">({item.location})</span>}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {new Date(item.time).toLocaleString(isRTL ? 'ar-EG' : 'en-US')}
+                              </p>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <p className="text-sm dark:text-slate-200">
-                              <span className="font-bold">User #{item * 123}</span> just registered from Saudi Arabia
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">2 minutes ago</p>
-                          </div>
-                        </div>
-                      ))}
+                        ))
+                      ) : (
+                        <p className="text-center text-muted-foreground py-8">
+                          {isRTL ? "لا يوجد نشاط مسجل" : "No activity recorded"}
+                        </p>
+                      )}
                     </div>
+
                   </div>
 
                   {/* System Status Table */}
@@ -1142,10 +1201,13 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                             <div className="flex items-center justify-between">
                                <span className="text-xs font-bold text-cyan-500 uppercase tracking-widest">Stat #{i + 1}</span>
                                <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => {
-                                 const newStats = [...localConfig.stats];
-                                 newStats.splice(i, 1);
-                                 setLocalConfig({...localConfig, stats: newStats});
+                                 if (confirm(isRTL ? "هل أنت متأكد من حذف هذه الإحصائية؟" : "Are you sure you want to delete this stat?")) {
+                                   const newStats = [...localConfig.stats];
+                                   newStats.splice(i, 1);
+                                   setLocalConfig({...localConfig, stats: newStats});
+                                 }
                                }}><Trash2 className="w-3 h-3" /></Button>
+
                             </div>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                <input 
@@ -1242,10 +1304,13 @@ export function AdminDashboard({ onLogout, isRTL, onToggleLanguage }: AdminDashb
                        {localConfig.features.items.map((item, i) => (
                          <div key={i} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border dark:border-slate-700 space-y-3 relative group/item">
                             <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6 text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity" onClick={() => {
-                               const newItems = [...localConfig.features.items];
-                               newItems.splice(i, 1);
-                               setLocalConfig({...localConfig, features: {...localConfig.features, items: newItems}});
+                               if (confirm(isRTL ? "هل أنت متأكد من حذف هذه الميزة؟" : "Are you sure you want to delete this feature?")) {
+                                  const newItems = [...localConfig.features.items];
+                                  newItems.splice(i, 1);
+                                  setLocalConfig({...localConfig, features: {...localConfig.features, items: newItems}});
+                               }
                             }}><Trash2 className="w-3 h-3" /></Button>
+
                             <div className="space-y-1">
                                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{isRTL ? "اسم الأيقونة" : "Icon Name"}</label>
                                <input type="text" value={item.iconName} onChange={(e) => {
